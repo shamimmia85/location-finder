@@ -17,6 +17,7 @@ st.markdown("""
         .block-container {
             padding-top: 1.2rem !important;
             padding-bottom: 1rem !important;
+            max-width: 100% !important;
         }
         hr {
             margin-top: 0.8rem !important;
@@ -29,9 +30,18 @@ st.markdown("""
             font-size: 20px;
             font-weight: bold;
             color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+        .role-badge {
+            background-color: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
             margin-bottom: 10px;
         }
-        /* সাইট ডিটেইলস কার্ড ও বড় ফন্ট */
         .site-card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -57,11 +67,55 @@ st.markdown("""
             font-size: 17px;
             color: #1a1a1a;
         }
+        iframe {
+            width: 100% !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# সাইডবারে নাম প্রদর্শনী
-st.sidebar.markdown('<div class="profile-name-text">ASI Shamim BPM</div>', unsafe_allow_html=True)
+# ------------------ ২. ইউজার ডেটাবেস ও লগইন সিস্টেম ------------------
+USER_DB = {
+    "admin": {"password": "admin123", "role": "Admin", "name": "ASI Shamim BPM"},
+    "user": {"password": "user123", "role": "User", "name": "General User"}
+}
+
+if 'authenticated' not in st.session_state:
+    st.session_state['authenticated'] = False
+if 'user_info' not in st.session_state:
+    st.session_state['user_info'] = None
+
+def login():
+    st.title("🔒 Location Finder Dashboard - Login")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        username = st.text_input("Username").strip()
+        password = st.text_input("Password", type="password").strip()
+        submit = st.button("Log In", type="primary", use_container_width=True)
+        
+        if submit:
+            if username in USER_DB and USER_DB[username]["password"] == password:
+                st.session_state['authenticated'] = True
+                st.session_state['user_info'] = USER_DB[username]
+                st.rerun()
+            else:
+                st.error("❌ ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!")
+
+if not st.session_state['authenticated']:
+    login()
+    st.stop()
+
+# ------------------ ৩. লগইন পরবর্তী মূল অ্যাপ্লিকেশন ------------------
+user_info = st.session_state['user_info']
+is_admin = user_info['role'] == "Admin"
+
+# সাইডবার ইউজার প্রোফাইল
+st.sidebar.markdown(f'<div class="profile-name-text">{user_info["name"]}</div>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<span class="role-badge">{user_info["role"]} Panel</span>', unsafe_allow_html=True)
+
+if st.sidebar.button("🚪 Logout", key="logout_btn"):
+    st.session_state['authenticated'] = False
+    st.session_state['user_info'] = None
+    st.rerun()
 
 st.sidebar.markdown("---")
 
@@ -69,7 +123,7 @@ st.sidebar.markdown("---")
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
-# ২. ডেটা লোড ফাংশন
+# ডেটা লোড ফাংশন
 @st.cache_data(show_spinner="ডেটা দ্রুত প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
     filename = file_or_path if isinstance(file_or_path, str) else file_or_path.name
@@ -100,7 +154,6 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# ৩. অপারেটর অনুযায়ী রঙের ফাংশন
 def get_operator_color(provider_name):
     prov = str(provider_name).lower()
     if 'gp' in prov or 'grameen' in prov:
@@ -114,7 +167,6 @@ def get_operator_color(provider_name):
     else:
         return '#6c757d'
 
-# ৪. পাই সেক্টর হিসাব
 def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
     points = [[lat, lon]]
     start_angle = azimuth - (beamwidth / 2)
@@ -135,7 +187,6 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
     
     return points, label_lat, label_lon
 
-# ৫. ক্লিন ভ্যালু ফাংশন
 def clean_val(val):
     if pd.isna(val) or val is None or str(val).strip() == "":
         return "N/A"
@@ -147,7 +198,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ৬. ফাইল লোড
+# ------------------ ৪. ডেটা ফাইল লোড (এডমিন ও ইউজার পারমিশন) ------------------
 st.sidebar.header("📁 ডেটা সোর্স")
 
 df = None
@@ -161,15 +212,19 @@ if all_files:
     except Exception as e:
         st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
-uploaded_file = st.sidebar.file_uploader("অন্য কোনো ফাইল আপলোড করতে চান?", type=["parquet", "csv", "xlsx"])
-if uploaded_file is not None:
-    try:
-        df = load_data_optimized(uploaded_file)
-        st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
-    except Exception as e:
-        st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
+# কেবল এডমিন নতুন ফাইল আপলোড করতে পারবেন
+if is_admin:
+    uploaded_file = st.sidebar.file_uploader("অন্য কোনো ফাইল আপলোড করুন (Admin Only):", type=["parquet", "csv", "xlsx"])
+    if uploaded_file is not None:
+        try:
+            df = load_data_optimized(uploaded_file)
+            st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
+        except Exception as e:
+            st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
+else:
+    st.sidebar.info("💡 সাধারণ ইউজারগণ শুধুমাত্র প্রস্তুতকৃত ডেটাবেস অনুসন্ধান করতে পারবেন।")
 
-# সাইডবার সেটিংস
+# সাইডবার ম্যাপ সেটিংস
 st.sidebar.markdown("---")
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
 map_theme = st.sidebar.selectbox(
@@ -179,7 +234,7 @@ map_theme = st.sidebar.selectbox(
 sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-# ৭. মূল সার্চ ইন্টারফেস
+# ------------------ ৫. মূল সার্চ ইন্টারফেস ------------------
 if df is not None:
     st.markdown("---")
     
@@ -193,7 +248,7 @@ if df is not None:
     lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
-    # সার্চ টাইপ ট্যাবস
+    # এডমিন সব সুবিধা পাবেন, ইউজারদের জন্য সার্চ নিয়ন্ত্রণ রাখা যাবে
     tab1, tab2 = st.tabs(["🔍 Tower Search (Single)", "📑 Multiple Search (একাধিক সার্চ)"])
 
     # ------------------ ট্যাব ১: একক সার্চ ------------------
@@ -209,13 +264,13 @@ if df is not None:
 
         with p_col2:
             if selected_provider == "All Providers":
-                method_options = ["Lac & Cell"]
+                method_options = ["Lac & Cell", "BTS Address"]
             else:
-                method_options = ["LAC", "Cell ID"]
+                method_options = ["LAC", "Cell ID", "BTS Address"]
                 
             selected_method = st.selectbox("Search Method", method_options, key="single_method")
 
-        lac_val_in, cell_val_in = "", ""
+        lac_val_in, cell_val_in, address_val_in = "", "", ""
         
         if selected_method == "Lac & Cell":
             i_col1, i_col2 = st.columns(2)
@@ -227,6 +282,8 @@ if df is not None:
             lac_val_in = st.text_input("LAC", placeholder="LAC লিখুন", key="s_lac_only").strip()
         elif selected_method == "Cell ID":
             cell_val_in = st.text_input("CELL ID", placeholder="CELL ID লিখুন", key="s_cell_only").strip()
+        elif selected_method == "BTS Address":
+            address_val_in = st.text_input("BTS Address", placeholder="ঠিকানা বা এলাকার নাম লিখুন (যেমন: Uttara, Askona)", key="s_addr_only").strip()
 
         search_button = st.button("🔍 সার্চ করুন", type="primary", use_container_width=True, key="single_btn")
 
@@ -271,6 +328,15 @@ if df is not None:
                     temp_df = temp_df[temp_df[s_cell] == c_clean]
                 else:
                     st.warning("⚠️ CELL ID প্রদান করুন।")
+                    temp_df = pd.DataFrame()
+            elif selected_method == "BTS Address":
+                if address_val_in and addr_col:
+                    temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(address_val_in.lower(), na=False)]
+                elif not addr_col:
+                    st.error("⚠️ ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
+                    temp_df = pd.DataFrame()
+                else:
+                    st.warning("⚠️ ঠিকানা বা এলাকার নাম লিখুন।")
                     temp_df = pd.DataFrame()
 
             st.session_state['single_search_df'] = temp_df
@@ -376,7 +442,7 @@ if df is not None:
                             )
                         ).add_to(m)
                         
-                        st_folium(m, width=1100, height=480, key="map_single")
+                        st_folium(m, use_container_width=True, height=520, key="map_single")
                         st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
                     except ValueError:
                         st.error("Latitude/Longitude মান সঠিক নয়।")
@@ -435,7 +501,6 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            # মধ্যবর্তী লাইন এবং দূরত্ব প্রদর্শন (উন্নত ও স্পষ্ট স্টাইল)
                             for i in range(len(coords) - 1):
                                 p1, p2 = coords[i], coords[i+1]
                                 dist_km = haversine(p1['lat'], p1['lon'], p2['lat'], p2['lon'])
@@ -444,7 +509,6 @@ if df is not None:
 
                                 folium.PolyLine(locations=[[p1['lat'], p1['lon']], [p2['lat'], p2['lon']]], color="#0056b3", weight=4, opacity=0.85, dash_array='6, 6').add_to(m)
                                 
-                                # দূরত্ব স্পষ্ট ও দৃশ্যমান করার এইচটিএমএল
                                 folium.Marker(
                                     [mid_lat, mid_lon], 
                                     icon=folium.DivIcon(
@@ -455,7 +519,20 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            st_folium(m, width=1100, height=500, key="map_multi")
+                            st_folium(m, use_container_width=True, height=520, key="map_multi")
+
+                            origin = f"{coords[0]['lat']},{coords[0]['lon']}"
+                            destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"
+                            
+                            if len(coords) > 2:
+                                waypoints = "|".join([f"{c['lat']},{c['lon']}" for c in coords[1:-1]])
+                                multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&waypoints={waypoints}&travelmode=driving"
+                            elif len(coords) == 2:
+                                multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving"
+                            else:
+                                multi_gmap_link = f"https://www.google.com/maps?q={origin}"
+
+                            st.markdown(f"### [🔗 Google map link (সকল লোকেশন একসাথে)]({multi_gmap_link})")
 
                     except Exception as e:
                         st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")

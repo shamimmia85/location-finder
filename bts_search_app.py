@@ -63,7 +63,6 @@ if not st.session_state.logged_in:
                 st.session_state.username = login_user
                 st.session_state.user_role = st.session_state.users_db[login_user]["role"]
                 
-                # প্রথমবার প্রবেশের নোটিফিকেশন ও অ্যাক্টিভ সেশন ট্র্যাক করা
                 if login_user not in st.session_state.active_sessions:
                     st.session_state.active_sessions.add(login_user)
                     st.session_state.new_user_alert = f"🔔 নতুন ইউজার '{login_user}' সিস্টেমে প্রবেশ করেছেন!"
@@ -72,7 +71,6 @@ if not st.session_state.logged_in:
             else:
                 st.error("ভুল ইউজার আইডি অথবা পাসওয়ার্ড!")
 
-        # হেল্পলাইন মোবাইল নম্বর প্রদর্শনী
         st.markdown("""
             <div class="contact-box">
                 📞 <b>প্রয়োজনে এডমিনের সাথে যোগাযোগ করুন:</b><br>
@@ -94,12 +92,11 @@ if st.sidebar.button("🚪 Logout"):
 
 st.sidebar.divider()
 
-# ৫. এডমিন প্যানেল (ব্যবহারকারী ব্যবস্থাপনা ও অ্যাক্টিভ স্ট্যাটাস)
+# ৫. এডমিন প্যানেল
 if st.session_state.user_role == "admin":
     with st.sidebar.expander("⚙️ Admin Control Panel", expanded=True):
         st.write(f"👥 **বর্তমানে মোট অ্যাক্টিভ ইউজার:** `{len(st.session_state.active_sessions)}` জন")
         
-        # নোটিফিকেশন পপআপ
         if 'new_user_alert' in st.session_state and st.session_state.new_user_alert:
             st.toast(st.session_state.new_user_alert, icon="🔔")
         
@@ -125,7 +122,7 @@ if st.session_state.user_role == "admin":
 
 st.sidebar.divider()
 
-# ৬. ডাটা সোর্স লোডিং logic (Parquet/CSV)
+# ৬. ডাটা লোডিং
 @st.cache_data
 def load_data():
     file_path = None
@@ -163,7 +160,6 @@ elif df is not None:
 else:
     st.sidebar.warning("কোনো ডেটা ফাইল পাওয়া যায়নি!")
 
-# হেল্পলাইন নোটিশ সাইডবারেও যুক্ত
 st.sidebar.markdown("""
     <div class="contact-box">
         📞 <b>এডমিন হটলাইন:</b><br>
@@ -179,23 +175,98 @@ if df is None:
     st.warning("👉 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি। অনুগ্রহ করে আপলোড করুন।")
     st.stop()
 
-# অনুসন্ধান ট্যাব
+# কলাম নেম নর্মালাইজেশন
+df.columns = [c.strip() for c in df.columns]
+
+# ৭. সার্চ ট্যাব
 tab1, tab2 = st.tabs(["🔍 Tower Search (Single)", "📋 Multiple Search (একাধিক সার্চ)"])
 
 with tab1:
     col_p, col_m = st.columns(2)
     with col_p:
-        provider = st.selectbox("Provider", ["All Providers"] + list(df['Provider'].unique()) if 'Provider' in df.columns else ["All Providers"])
+        provider_list = ["All Providers"]
+        for p_col in ['Provider', 'Operator', 'OPERATOR', 'NetWork']:
+            if p_col in df.columns:
+                provider_list += list(df[p_col].dropna().unique())
+                break
+        provider = st.selectbox("Provider", provider_list)
+        
     with col_m:
         search_method = st.selectbox("Search Method", ["Lac & Cell", "Lat & Long", "Address/Location"])
 
+    results = pd.DataFrame()
+    
     if search_method == "Lac & Cell":
         c1, c2 = st.columns(2)
-        lac = c1.text_input("LAC")
-        cell = c2.text_input("Cell ID")
+        lac_input = c1.text_input("LAC").strip()
+        cell_input = c2.text_input("Cell ID").strip()
         
-        if st.button("🔍 সার্চ করুন", type="primary"):
-            st.info("অনুসন্ধানের ফলাফল ম্যাপে দেখানো হবে।")
+        search_btn = st.button("🔍 সার্চ করুন", type="primary")
+        
+        if search_btn:
+            filtered_df = df.copy()
+            
+            # প্রোভাইডার ফিল্টার
+            for p_col in ['Provider', 'Operator', 'OPERATOR', 'NetWork']:
+                if p_col in filtered_df.columns and provider != "All Providers":
+                    filtered_df = filtered_df[filtered_df[p_col].astype(str).str.lower() == provider.lower()]
+                    break
+                    
+            # LAC ফিল্টার
+            lac_cols = [c for c in filtered_df.columns if c.lower() in ['lac', 'lac_id', 'lac id']]
+            if lac_cols and lac_input:
+                filtered_df = filtered_df[filtered_df[lac_cols[0]].astype(str) == lac_input]
+                
+            # Cell ID ফিল্টার
+            cell_cols = [c for c in filtered_df.columns if c.lower() in ['cell', 'cell_id', 'cell id', 'ci']]
+            if cell_cols and cell_input:
+                filtered_df = filtered_df[filtered_df[cell_cols[0]].astype(str) == cell_input]
+                
+            results = filtered_df
+
+    # ফলাফল ও ম্যাপ রিপ্রেজেন্টেশন
+    if not results.empty:
+        st.success(f"🎯 মোট {len(results)} টি ফলাফল পাওয়া গেছে!")
+        st.dataframe(results)
+        
+        # Lat/Long কলাম খুঁজে বের করা
+        lat_cols = [c for c in results.columns if 'lat' in c.lower()]
+        lon_cols = [c for c in results.columns if 'lon' in c.lower() or 'lng' in c.lower()]
+        
+        if lat_cols and lon_cols:
+            first_row = results.iloc[0]
+            try:
+                lat = float(first_row[lat_cols[0]])
+                lon = float(first_row[lon_cols[0]])
+                
+                # ম্যাপ তৈরি
+                m = folium.Map(location=[lat, lon], zoom_start=15)
+                Fullscreen().add_to(m)
+                
+                # মার্কার যুক্ত করা
+                popup_text = "<br>".join([f"<b>{col}:</b> {first_row[col]}" for col in results.columns[:6]])
+                folium.Marker(
+                    location=[lat, lon],
+                    popup=folium.Popup(popup_text, max_width=300),
+                    icon=folium.Icon(color="red", icon="signal", prefix="fa")
+                ).add_to(m)
+                
+                # কভারেজ সার্কেল
+                folium.Circle(
+                    radius=350,
+                    location=[lat, lon],
+                    color="red",
+                    fill=True,
+                    fill_opacity=0.2
+                ).add_to(m)
+                
+                st_folium(m, width="100%", height=500)
+            except Exception as e:
+                st.error("Latitude/Longitude তথ্য সংখ্যায় রূপান্তর করা যায়নি।")
+        else:
+            st.warning("ফলাফলে Latitude এবং Longitude কলাম পাওয়া যায়নি।")
+    elif 'search_btn' in locals() and search_btn:
+        st.error("❌ প্রদত্ত LAC ও Cell ID দিয়ে কোনো ম্যাচ পাওয়া যায়নি!")
 
 with tab2:
     st.write("একাধিক LAC/Cell ID একসাথে সার্চ করার সুবিধা।")

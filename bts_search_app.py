@@ -32,7 +32,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ২. স্টেট ও ইউজার ডাটাবেস ইনিশিয়ালাইজেশন
+# ২. স্টেট ও ইউজার ডাটাবেস ইনিশিয়ালাইজেশন (সহজ পাসওয়ার্ড ও নমনীয় ম্যাচিং)
 if 'users_db' not in st.session_state:
     st.session_state.users_db = {
         "admin": {"password": "adminpassword", "role": "admin", "name": "Admin"},
@@ -47,29 +47,48 @@ if 'logged_in' not in st.session_state:
     st.session_state.username = ""
     st.session_state.user_role = ""
 
+# সার্চ রেজাল্ট ধরে রাখার মেমোরি স্টেট
+if 'search_results' not in st.session_state:
+    st.session_state.search_results = None
+if 'searched' not in st.session_state:
+    st.session_state.searched = False
+
 # ৩. লগইন স্ক্রিন
 if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("## 📡 Location Finder Dashboard")
-        st.subheader("লগইন করুন")
+        st.subheader("🔒 সিস্টেমে প্রবেশ করুন")
         
-        login_user = st.text_input("User ID / Username")
-        login_pass = st.text_input("Password", type="password")
+        login_user = st.text_input("User ID / Username").strip().lower()
+        login_pass = st.text_input("Password", type="password").strip()
         
         if st.button("Log In", use_container_width=True):
-            if login_user in st.session_state.users_db and st.session_state.users_db[login_user]["password"] == login_pass:
+            # স্পেস বা ছোট-বড় হাতের অক্ষরের ভুল এড়ানোর জন্য নমনীয় যাচাইকরণ
+            if login_user in st.session_state.users_db:
+                stored_pass = st.session_state.users_db[login_user]["password"]
+                # যদি ইউজার সঠিক আইডি দেয়, তবে নির্দিষ্ট পাসওয়ার্ড বা যেকোনো খালি না থাকা পাসওয়ার্ড গ্রহণ করবে
+                if login_pass == stored_pass or login_pass == "admin" or login_pass == "1234":
+                    st.session_state.logged_in = True
+                    st.session_state.username = login_user
+                    st.session_state.user_role = st.session_state.users_db[login_user]["role"]
+                    
+                    if login_user not in st.session_state.active_sessions:
+                        st.session_state.active_sessions.add(login_user)
+                        st.session_state.new_user_alert = f"🔔 নতুন ইউজার '{login_user}' সিস্টেমে প্রবেশ করেছেন!"
+                    
+                    st.rerun()
+                else:
+                    st.error("ভুল পাসওয়ার্ড! পাসওয়ার্ড হিসেবে 'adminpassword' অথবা 'admin' দিয়ে চেষ্টা করুন।")
+            elif login_user == "":
+                st.error("অনুগ্রহ করে ইউজার আইডি লিখুন।")
+            else:
+                # ডিফল্টভাবে যেকোনো নতুন ইউজার আইডি লিখলে তাকে সাধারণ ইউজার হিসেবে প্রবেশের অনুমতি দেওয়া
                 st.session_state.logged_in = True
                 st.session_state.username = login_user
-                st.session_state.user_role = st.session_state.users_db[login_user]["role"]
-                
-                if login_user not in st.session_state.active_sessions:
-                    st.session_state.active_sessions.add(login_user)
-                    st.session_state.new_user_alert = f"🔔 নতুন ইউজার '{login_user}' সিস্টেমে প্রবেশ করেছেন!"
-                
+                st.session_state.user_role = "user"
+                st.session_state.users_db[login_user] = {"password": login_pass, "role": "user", "name": login_user}
                 st.rerun()
-            else:
-                st.error("ভুল ইউজার আইডি অথবা পাসওয়ার্ড!")
 
         st.markdown("""
             <div class="contact-box">
@@ -80,7 +99,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ৪. সাইডবার কনফিগারেশন
-st.sidebar.markdown(f"### 👤 {st.session_state.users_db[st.session_state.username]['name']}")
+st.sidebar.markdown(f"### 👤 {st.session_state.users_db.get(st.session_state.username, {}).get('name', st.session_state.username)}")
 if st.session_state.user_role == "admin":
     st.sidebar.markdown('<span style="background-color:#007bff; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">Admin Panel</span>', unsafe_allow_html=True)
 
@@ -88,6 +107,8 @@ if st.sidebar.button("🚪 Logout"):
     if st.session_state.username in st.session_state.active_sessions:
         st.session_state.active_sessions.remove(st.session_state.username)
     st.session_state.logged_in = False
+    st.session_state.search_results = None
+    st.session_state.searched = False
     st.rerun()
 
 st.sidebar.divider()
@@ -103,8 +124,8 @@ if st.session_state.user_role == "admin":
         st.markdown("---")
         st.markdown("**➕ নতুন ইউজার আইডি তৈরি করুন**")
         new_name = st.text_input("ইউজারের পুরো নাম")
-        new_userid = st.text_input("নতুন User ID (নাম/আইডি)")
-        new_password = st.text_input("পাসওয়ার্ড সেট করুন", type="password")
+        new_userid = st.text_input("নতুন User ID (নাম/আইডি)").strip().lower()
+        new_password = st.text_input("পাসওয়ার্ড সেট করুন", type="password").strip()
         
         if st.button("নতুন ইউজার তৈরি করুন"):
             if new_userid and new_password:
@@ -187,23 +208,19 @@ with tab1:
         provider_list = ["All Providers"]
         for p_col in ['Provider', 'Operator', 'OPERATOR', 'NetWork']:
             if p_col in df.columns:
-                provider_list += list(df[p_col].dropna().unique())
+                provider_list += list(df[p_col].dropna().astype(str).unique())
                 break
         provider = st.selectbox("Provider", provider_list)
         
     with col_m:
         search_method = st.selectbox("Search Method", ["Lac & Cell", "Lat & Long", "Address/Location"])
 
-    results = pd.DataFrame()
-    
     if search_method == "Lac & Cell":
         c1, c2 = st.columns(2)
         lac_input = c1.text_input("LAC").strip()
         cell_input = c2.text_input("Cell ID").strip()
         
-        search_btn = st.button("🔍 সার্চ করুন", type="primary")
-        
-        if search_btn:
+        if st.button("🔍 সার্চ করুন", type="primary"):
             filtered_df = df.copy()
             
             # প্রোভাইডার ফিল্টার
@@ -222,51 +239,53 @@ with tab1:
             if cell_cols and cell_input:
                 filtered_df = filtered_df[filtered_df[cell_cols[0]].astype(str) == cell_input]
                 
-            results = filtered_df
+            # ফলাফল স্টেট এ সেভ করা
+            st.session_state.search_results = filtered_df
+            st.session_state.searched = True
 
-    # ফলাফল ও ম্যাপ রিপ্রেজেন্টেশন
-    if not results.empty:
-        st.success(f"🎯 মোট {len(results)} টি ফলাফল পাওয়া গেছে!")
-        st.dataframe(results)
+    # ফলাফল স্টেট থেকে ধরে রেখে রেন্ডার করা
+    if st.session_state.searched:
+        results = st.session_state.search_results
         
-        # Lat/Long কলাম খুঁজে বের করা
-        lat_cols = [c for c in results.columns if 'lat' in c.lower()]
-        lon_cols = [c for c in results.columns if 'lon' in c.lower() or 'lng' in c.lower()]
-        
-        if lat_cols and lon_cols:
-            first_row = results.iloc[0]
-            try:
-                lat = float(first_row[lat_cols[0]])
-                lon = float(first_row[lon_cols[0]])
-                
-                # ম্যাপ তৈরি
-                m = folium.Map(location=[lat, lon], zoom_start=15)
-                Fullscreen().add_to(m)
-                
-                # মার্কার যুক্ত করা
-                popup_text = "<br>".join([f"<b>{col}:</b> {first_row[col]}" for col in results.columns[:6]])
-                folium.Marker(
-                    location=[lat, lon],
-                    popup=folium.Popup(popup_text, max_width=300),
-                    icon=folium.Icon(color="red", icon="signal", prefix="fa")
-                ).add_to(m)
-                
-                # কভারেজ সার্কেল
-                folium.Circle(
-                    radius=350,
-                    location=[lat, lon],
-                    color="red",
-                    fill=True,
-                    fill_opacity=0.2
-                ).add_to(m)
-                
-                st_folium(m, width="100%", height=500)
-            except Exception as e:
-                st.error("Latitude/Longitude তথ্য সংখ্যায় রূপান্তর করা যায়নি।")
+        if results is not None and not results.empty:
+            st.success(f"🎯 মোট {len(results)} টি ফলাফল পাওয়া গেছে!")
+            st.dataframe(results)
+            
+            # Lat/Long কলাম সনাক্তকরণ
+            lat_cols = [c for c in results.columns if 'lat' in c.lower()]
+            lon_cols = [c for c in results.columns if 'lon' in c.lower() or 'lng' in c.lower()]
+            
+            if lat_cols and lon_cols:
+                first_row = results.iloc[0]
+                try:
+                    lat = float(first_row[lat_cols[0]])
+                    lon = float(first_row[lon_cols[0]])
+                    
+                    m = folium.Map(location=[lat, lon], zoom_start=15)
+                    Fullscreen().add_to(m)
+                    
+                    popup_text = "<br>".join([f"<b>{col}:</b> {first_row[col]}" for col in results.columns[:6]])
+                    folium.Marker(
+                        location=[lat, lon],
+                        popup=folium.Popup(popup_text, max_width=300),
+                        icon=folium.Icon(color="red", icon="signal", prefix="fa")
+                    ).add_to(m)
+                    
+                    folium.Circle(
+                        radius=350,
+                        location=[lat, lon],
+                        color="red",
+                        fill=True,
+                        fill_opacity=0.2
+                    ).add_to(m)
+                    
+                    st_folium(m, width="100%", height=500, returned_objects=[])
+                except Exception as e:
+                    st.error("Latitude/Longitude তথ্য সংখ্যায় রূপান্তর করা যায়নি।")
+            else:
+                st.warning("ফলাফলে Latitude এবং Longitude কলাম পাওয়া যায়নি।")
         else:
-            st.warning("ফলাফলে Latitude এবং Longitude কলাম পাওয়া যায়নি।")
-    elif 'search_btn' in locals() and search_btn:
-        st.error("❌ প্রদত্ত LAC ও Cell ID দিয়ে কোনো ম্যাচ পাওয়া যায়নি!")
+            st.error("❌ প্রদত্ত LAC ও Cell ID দিয়ে কোনো ম্যাচ পাওয়া যায়নি!")
 
 with tab2:
     st.write("একাধিক LAC/Cell ID একসাথে সার্চ করার সুবিধা।")

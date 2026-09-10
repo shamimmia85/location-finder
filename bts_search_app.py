@@ -67,45 +67,69 @@ st.markdown("""
             font-size: 17px;
             color: #1a1a1a;
         }
+        .contact-box {
+            background-color: #f0f2f6;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #ff4b4b;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
         iframe {
             width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# ------------------ ২. ইউজার ডেটাবেস ও লগইন সিস্টেম ------------------
-USER_DB = {
-    "admin": {"password": "admin123", "role": "Admin", "name": "ASI Shamim BPM"},
-    "user": {"password": "user123", "role": "User", "name": "General User"}
-}
+# ------------------ ২. ইউজার ডেটাবেস ও সেসন ম্যানেজমেন্ট ------------------
+if 'users_db' not in st.session_state:
+    st.session_state.users_db = {
+        "admin": {"password": "admin123", "role": "Admin", "name": "ASI Shamim BPM"},
+        "user": {"password": "user123", "role": "User", "name": "General User"}
+    }
+
+if 'active_users' not in st.session_state:
+    st.session_state.active_users = set()
 
 if 'authenticated' not in st.session_state:
     st.session_state['authenticated'] = False
-if 'user_info' not in st.session_state:
-    st.session_state['user_info'] = None
+if 'username' not in st.session_state:
+    st.session_state['username'] = None
 
+# ------------------ ৩. লগইন স্ক্রিন ------------------
 def login():
     st.title("🔒 Location Finder Dashboard - Login")
     col1, col2 = st.columns([1, 2])
     with col1:
-        username = st.text_input("Username").strip()
-        password = st.text_input("Password", type="password").strip()
+        username_input = st.text_input("Username").strip().lower()
+        password_input = st.text_input("Password", type="password").strip()
         submit = st.button("Log In", type="primary", use_container_width=True)
         
         if submit:
-            if username in USER_DB and USER_DB[username]["password"] == password:
+            db = st.session_state.users_db
+            if username_input in db and db[username_input]["password"] == password_input:
                 st.session_state['authenticated'] = True
-                st.session_state['user_info'] = USER_DB[username]
+                st.session_state['username'] = username_input
+                st.session_state.active_users.add(username_input)
                 st.rerun()
             else:
                 st.error("❌ ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!")
+
+        # যোগাযোগের নম্বর
+        st.markdown("""
+            <div class="contact-box">
+                📞 <b>প্রয়োজনে এডমিনের সাথে যোগাযোগ করুন:</b><br>
+                মোবাইল নম্বর: <b>01914594294</b>
+            </div>
+        """, unsafe_allow_html=True)
 
 if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৩. লগইন পরবর্তী মূল অ্যাপ্লিকেশন ------------------
-user_info = st.session_state['user_info']
+# ------------------ ৪. লগইন পরবর্তী তথ্য ও প্রোফাইল ------------------
+current_username = st.session_state['username']
+user_info = st.session_state.users_db[current_username]
 is_admin = user_info['role'] == "Admin"
 
 # সাইডবার ইউজার প্রোফাইল
@@ -113,9 +137,56 @@ st.sidebar.markdown(f'<div class="profile-name-text">{user_info["name"]}</div>',
 st.sidebar.markdown(f'<span class="role-badge">{user_info["role"]} Panel</span>', unsafe_allow_html=True)
 
 if st.sidebar.button("🚪 Logout", key="logout_btn"):
+    if current_username in st.session_state.active_users:
+        st.session_state.active_users.remove(current_username)
     st.session_state['authenticated'] = False
-    st.session_state['user_info'] = None
+    st.session_state['username'] = None
     st.rerun()
+
+st.sidebar.markdown("---")
+
+# ------------------ ৫. এডমিন কন্ট্রোল প্যানেল ------------------
+if is_admin:
+    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
+        st.write(f"👥 **বর্তমানে সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
+        st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
+        
+        st.markdown("---")
+        st.markdown("**➕ নতুন ইউজার ক্রিয়েট করুন:**")
+        new_name = st.text_input("ইউজারের নাম", key="admin_new_name").strip()
+        new_userid = st.text_input("User ID (ইউজারনেম)", key="admin_new_uid").strip().lower()
+        new_password = st.text_input("পাসওয়ার্ড", type="password", key="admin_new_pass").strip()
+        new_role = st.selectbox("ইউজার রোল", ["User", "Admin"], key="admin_new_role")
+        
+        if st.button("নতুন ইউজার তৈরি করুন", use_container_width=True):
+            if new_userid and new_password:
+                if new_userid not in st.session_state.users_db:
+                    st.session_state.users_db[new_userid] = {
+                        "password": new_password,
+                        "role": new_role,
+                        "name": new_name if new_name else new_userid
+                    }
+                    st.success(f"✅ ইউজার '{new_userid}' সফলভাবে ক্রিয়েট হয়েছে!")
+                else:
+                    st.warning("⚠️ এই ইউজার আইডিটি ইতিমধ্যে বিদ্যমান!")
+            else:
+                st.error("আইডি এবং পাসওয়ার্ড উভয়ই পূরণ করুন।")
+
+# ------------------ ৬. সেটিংস (পাসওয়ার্ড পরিবর্তন) ------------------
+with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
+    curr_pass = st.text_input("বর্তমান পাসওয়ার্ড", type="password", key="c_pass")
+    new_pass = st.text_input("নতুন পাসওয়ার্ড", type="password", key="n_pass")
+    conf_pass = st.text_input("নতুন পাসওয়ার্ড নিশ্চিত করুন", type="password", key="cnf_pass")
+    
+    if st.button("পাসওয়ার্ড আপডেট করুন", use_container_width=True):
+        if user_info["password"] == curr_pass:
+            if new_pass and new_pass == conf_pass:
+                st.session_state.users_db[current_username]["password"] = new_pass
+                st.success("✅ পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে!")
+            else:
+                st.error("নতুন পাসওয়ার্ড দুটি মিলছে না!")
+        else:
+            st.error("বর্তমান পাসওয়ার্ড ভুল হয়েছে!")
 
 st.sidebar.markdown("---")
 
@@ -198,7 +269,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৪. ডেটা ফাইল লোড (এডমিন ও ইউজার পারমিশন) ------------------
+# ------------------ ৭. ডেটা ফাইল লোড ------------------
 st.sidebar.header("📁 ডেটা সোর্স")
 
 df = None
@@ -212,7 +283,6 @@ if all_files:
     except Exception as e:
         st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
-# কেবল এডমিন নতুন ফাইল আপলোড করতে পারবেন
 if is_admin:
     uploaded_file = st.sidebar.file_uploader("অন্য কোনো ফাইল আপলোড করুন (Admin Only):", type=["parquet", "csv", "xlsx"])
     if uploaded_file is not None:
@@ -224,17 +294,41 @@ if is_admin:
 else:
     st.sidebar.info("💡 সাধারণ ইউজারগণ শুধুমাত্র প্রস্তুতকৃত ডেটাবেস অনুসন্ধান করতে পারবেন।")
 
-# সাইডবার ম্যাপ সেটিংস
+# সাইডবার ম্যাপ সেটিংস (Google Hybrid অপশন যুক্ত)
 st.sidebar.markdown("---")
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
 map_theme = st.sidebar.selectbox(
     "ম্যাপের স্টাইল:",
-    ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter", "Esri WorldImagery"]
+    ["Google Hybrid", "OpenStreetMap", "CartoDB positron", "CartoDB dark_matter", "Esri WorldImagery"]
 )
 sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-# ------------------ ৫. মূল সার্চ ইন্টারফেস ------------------
+# অ্যাডমিন কন্টাক্ট বক্স (সাইডবার)
+st.sidebar.markdown("""
+    <div class="contact-box">
+        📞 <b>এডমিন হটলাইন:</b><br>
+        01914594294
+    </div>
+""", unsafe_allow_html=True)
+
+# ম্যাপ হেল্পার ফাংশন (Google Hybrid সাপোর্টের জন্য)
+def render_folium_map(center_lat, center_lon, zoom=15):
+    if map_theme == "Google Hybrid":
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles=None)
+        folium.TileLayer(
+            tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            attr='Google',
+            name='Google Hybrid',
+            overlay=False,
+            control=True
+        ).add_to(m)
+    else:
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles=map_theme)
+    Fullscreen(position='topright').add_to(m)
+    return m
+
+# ------------------ ৮. মূল সার্চ ইন্টারফেস ------------------
 if df is not None:
     st.markdown("---")
     
@@ -248,7 +342,6 @@ if df is not None:
     lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
-    # এডমিন সব সুবিধা পাবেন, ইউজারদের জন্য সার্চ নিয়ন্ত্রণ রাখা যাবে
     tab1, tab2 = st.tabs(["🔍 Tower Search (Single)", "📑 Multiple Search (একাধিক সার্চ)"])
 
     # ------------------ ট্যাব ১: একক সার্চ ------------------
@@ -341,7 +434,7 @@ if df is not None:
 
             st.session_state['single_search_df'] = temp_df
 
-    # ------------------ ট্যাব ২: মাল্টি সার্চ (একাধিক সার্চ) ------------------
+    # ------------------ ট্যাব ২: মাল্টি সার্চ ------------------
     with tab2:
         col1, col2 = st.columns(2)
         with col1: 
@@ -415,8 +508,7 @@ if df is not None:
                         st.markdown("---")
                         st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
                         
-                        m = folium.Map(location=[lat_val, lon_val], zoom_start=15, tiles=map_theme)
-                        Fullscreen(position='topright').add_to(m)
+                        m = render_folium_map(lat_val, lon_val, zoom=15)
 
                         color = get_operator_color(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
@@ -465,8 +557,7 @@ if df is not None:
                                 a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
                                 return R * 2 * asin(sqrt(a))
 
-                            m = folium.Map(location=[records[0][lat_col], records[0][lon_col]], zoom_start=13, tiles=map_theme)
-                            Fullscreen(position='topright').add_to(m)
+                            m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=13)
 
                             coords = []
                             for row in records:

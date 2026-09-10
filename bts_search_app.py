@@ -32,7 +32,6 @@ st.markdown("""
             color: #1a1a1a;
             margin-bottom: 10px;
         }
-        /* সাইট ডিটেইলস কার্ড ও বড় ফন্ট */
         .site-card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -58,24 +57,122 @@ st.markdown("""
             font-size: 17px;
             color: #1a1a1a;
         }
-        /* ম্যাপ রেসপনসিভ প্যারেন্ট */
+        .contact-box {
+            background-color: #f0f2f6;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #ff4b4b;
+            margin-top: 15px;
+        }
         iframe {
             width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# সাইডবারে নাম প্রদর্শনী
-st.sidebar.markdown('<div class="profile-name-text">ASI Shamim BPM</div>', unsafe_allow_html=True)
+# ২. ইউজার ডাটাবেস ও স্টেট ইনিশিয়ালাইজেশন
+if 'users_db' not in st.session_state:
+    st.session_state.users_db = {
+        "Asi shamim": {"password": "adminpassword", "role": "admin", "name": "ASI Shamim BPM"},
+        "user1": {"password": "user123", "role": "user", "name": "General User"}
+    }
+
+if 'active_sessions' not in st.session_state:
+    st.session_state.active_sessions = set()
+
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.session_state.user_role = ""
+
+# ৩. লগইন সিস্টেম
+if not st.session_state.logged_in:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("## 📡 Location Finder Dashboard")
+        st.subheader("🔐 সিস্টেমে প্রবেশ করুন")
+        
+        login_user = st.text_input("User ID / Username")
+        login_pass = st.text_input("Password", type="password")
+        
+        if st.button("Log In", use_container_width=True, type="primary"):
+            if login_user in st.session_state.users_db and st.session_state.users_db[login_user]["password"] == login_pass:
+                st.session_state.logged_in = True
+                st.session_state.username = login_user
+                st.session_state.user_role = st.session_state.users_db[login_user]["role"]
+                st.session_state.active_sessions.add(login_user)
+                st.rerun()
+            else:
+                st.error("❌ ভুল ইউজার আইডি অথবা পাসওয়ার্ড!")
+
+        st.markdown("""
+            <div class="contact-box">
+                📞 <b>প্রয়োজনে এডমিনের সাথে যোগাযোগ করুন:</b><br>
+                মোবাইল নম্বর: <b>01914594294</b>
+            </div>
+        """, unsafe_allow_html=True)
+    st.stop()
+
+# ৪. সাইডবার ইউজার প্রোফাইল ও লগআউট
+current_user_name = st.session_state.users_db[st.session_state.username]['name']
+st.sidebar.markdown(f'<div class="profile-name-text">{current_user_name}</div>', unsafe_allow_html=True)
+
+if st.session_state.user_role == "admin":
+    st.sidebar.markdown('<span style="background-color:#007bff; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">Admin Panel</span>', unsafe_allow_html=True)
+
+if st.sidebar.button("🚪 Logout"):
+    if st.session_state.username in st.session_state.active_sessions:
+        st.session_state.active_sessions.remove(st.session_state.username)
+    st.session_state.logged_in = False
+    st.session_state.single_search_df = None
+    st.session_state.multi_search_df = None
+    st.rerun()
 
 st.sidebar.markdown("---")
 
-# টাইটেল
-st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
+# ৫. এডমিন প্যানেল ও সেটিংস
+if st.session_state.user_role == "admin":
+    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
+        st.write(f"👥 **অ্যাক্টিভ ইউজার সংখ্যা:** `{len(st.session_state.active_sessions)}` জন")
+        st.write("📋 **অ্যাক্টিভ লিস্ট:**", ", ".join(list(st.session_state.active_sessions)))
+        
+        st.markdown("---")
+        st.markdown("**➕ নতুন ইউজার আইডি তৈরি করুন**")
+        new_name = st.text_input("ইউজারের নাম")
+        new_userid = st.text_input("নতুন User ID")
+        new_password = st.text_input("পাসওয়ার্ড", type="password")
+        
+        if st.button("নতুন ইউজার তৈরি করুন"):
+            if new_userid and new_password:
+                if new_userid not in st.session_state.users_db:
+                    st.session_state.users_db[new_userid] = {
+                        "password": new_password,
+                        "role": "user",
+                        "name": new_name if new_name else new_userid
+                    }
+                    st.success(f"ইউজার '{new_userid}' তৈরি হয়েছে!")
+                else:
+                    st.warning("এই আইডিটি আগে থেকেই বিদ্যমান!")
+            else:
+                st.error("ইউজার আইডি ও পাসওয়ার্ড দিন।")
 
-# ২. ডেটা লোড ফাংশন
-@st.cache_data(show_spinner="ডেটা দ্রুত প্রক্রিয়াকরণ হচ্ছে...")
+    with st.sidebar.expander("🔑 এডমিন পাসওয়ার্ড পরিবর্তন", expanded=False):
+        curr_pass = st.text_input("বর্তমান পাসওয়ার্ড", type="password", key="c_pass")
+        new_adm_pass = st.text_input("নতুন পাসওয়ার্ড", type="password", key="n_pass")
+        if st.button("পাসওয়ার্ড আপডেট করুন"):
+            if st.session_state.users_db[st.session_state.username]["password"] == curr_pass:
+                if new_adm_pass:
+                    st.session_state.users_db[st.session_state.username]["password"] = new_adm_pass
+                    st.success("পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে!")
+                else:
+                    st.error("নতুন পাসওয়ার্ড ফিল্ড খালি হতে পারে না।")
+            else:
+                st.error("বর্তমান পাসওয়ার্ড ভুল!")
+
+    st.sidebar.markdown("---")
+
+# ৬. ডেটা লোড ফাংশন
+@st.cache_data(show_spinner="ডেটা দ্রুত প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
     filename = file_or_path if isinstance(file_or_path, str) else file_or_path.name
     
@@ -105,7 +202,7 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# ৩. অপারেটর অনুযায়ী রঙের ফাংশন
+# ৭. অপারেটর অনুযায়ী রঙের ফাংশন
 def get_operator_color(provider_name):
     prov = str(provider_name).lower()
     if 'gp' in prov or 'grameen' in prov:
@@ -119,7 +216,7 @@ def get_operator_color(provider_name):
     else:
         return '#6c757d'
 
-# ৪. পাই সেক্টর হিসাব
+# ৮. পাই সেক্টর হিসাব
 def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
     points = [[lat, lon]]
     start_angle = azimuth - (beamwidth / 2)
@@ -140,7 +237,7 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
     
     return points, label_lat, label_lon
 
-# ৫. ক্লিন ভ্যালু ফাংশন
+# ৯. ক্লিন ভ্যালু ফাংশন
 def clean_val(val):
     if pd.isna(val) or val is None or str(val).strip() == "":
         return "N/A"
@@ -152,7 +249,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ৬. ফাইল লোড
+# ১০. ফাইল লোড
 st.sidebar.header("📁 ডেটা সোর্স")
 
 df = None
@@ -162,7 +259,7 @@ if all_files:
     auto_file = all_files[0]
     try:
         df = load_data_optimized(auto_file)
-        st.sidebar.success(f"📂 **{auto_file}** লোড হয়েছে! মোট রো: {len(df):,}")
+        st.sidebar.success(f"📂 **{auto_file}** লোড হয়েছে! মোট রো: {len(df):,}")
     except Exception as e:
         st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
@@ -170,21 +267,31 @@ uploaded_file = st.sidebar.file_uploader("অন্য কোনো ফাইল
 if uploaded_file is not None:
     try:
         df = load_data_optimized(uploaded_file)
-        st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
+        st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
     except Exception as e:
         st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
-# সাইডবার সেটিংস
+# সাইডবার ম্যাপ সেটিংস
 st.sidebar.markdown("---")
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
 map_theme = st.sidebar.selectbox(
     "ম্যাপের স্টাইল:",
-    ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter", "Esri WorldImagery"]
+    ["Esri WorldImagery", "OpenStreetMap", "CartoDB positron", "CartoDB dark_matter"]
 )
 sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-# ৭. মূল সার্চ ইন্টারফেস
+st.sidebar.markdown("""
+    <div class="contact-box">
+        📞 <b>এডমিন হটলাইন:</b><br>
+        <b>01914594294</b>
+    </div>
+""", unsafe_allow_html=True)
+
+# ১১. মূল ড্যাশবোর্ড ইন্টারফেস
+st.title("📡 Location Finder Dashboard")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
+
 if df is not None:
     st.markdown("---")
     
@@ -283,7 +390,7 @@ if df is not None:
                 if address_val_in and addr_col:
                     temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(address_val_in.lower(), na=False)]
                 elif not addr_col:
-                    st.error("⚠️ ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
+                    st.error("⚠️ ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
                     temp_df = pd.DataFrame()
                 else:
                     st.warning("⚠️ ঠিকানা বা এলাকার নাম লিখুন।")
@@ -291,13 +398,13 @@ if df is not None:
 
             st.session_state['single_search_df'] = temp_df
 
-    # ------------------ ট্যাব ২: মাল্টি সার্চ (একাধিক সার্চ) ------------------
+    # ------------------ ট্যাব ২: মাল্টি সার্চ ------------------
     with tab2:
         col1, col2 = st.columns(2)
         with col1: 
-            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="46, 838, 1200", key="m_lac")
+            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="46, 838, 1200", key="m_lac")
         with col2: 
-            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="1945, 32271", key="m_cell")
+            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="1945, 32271", key="m_cell")
 
         multi_search_button = st.button("🔍 একাধিক সার্চ করুন", type="primary", use_container_width=True, key="multi_btn")
 
@@ -328,7 +435,7 @@ if df is not None:
 
     if filtered_df is not None:
         if not filtered_df.empty:
-            st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
+            st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
 
             if len(filtered_df) == 1:
                 row = filtered_df.iloc[0]
@@ -392,10 +499,10 @@ if df is not None:
                             )
                         ).add_to(m)
                         
-                        st_folium(m, use_container_width=True, height=520, key="map_single")
+                        st_folium(m, use_container_width=True, height=520, key="map_single", returned_objects=[])
                         st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
                     except ValueError:
-                        st.error("Latitude/Longitude মান সঠিক নয়।")
+                        st.error("Latitude/Longitude মান সঠিক নয়।")
             else:
                 st.dataframe(filtered_df, use_container_width=True)
                 if lat_col and lon_col:
@@ -451,7 +558,6 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            # মধ্যবর্তী লাইন এবং দূরত্ব প্রদর্শন
                             for i in range(len(coords) - 1):
                                 p1, p2 = coords[i], coords[i+1]
                                 dist_km = haversine(p1['lat'], p1['lon'], p2['lat'], p2['lon'])
@@ -470,9 +576,8 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            st_folium(m, use_container_width=True, height=520, key="map_multi")
+                            st_folium(m, use_container_width=True, height=520, key="map_multi", returned_objects=[])
 
-                            # একাধিক লোকেশনের জন্য একটি একক ডিরেকশন গুগল ম্যাপ লিংক তৈরি
                             origin = f"{coords[0]['lat']},{coords[0]['lon']}"
                             destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"
                             
@@ -489,7 +594,7 @@ if df is not None:
                     except Exception as e:
                         st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
         else:
-            st.error("❌ কোনো তথ্য পাওয়া যায়নি।")
+            st.error("❌ কোনো তথ্য পাওয়া যায়নি।")
 
 else:
-    st.info("👈 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি।")
+    st.info("👈 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি। অনুগ্রহ করে সাইডবার থেকে ফাইল আপলোড করুন।")

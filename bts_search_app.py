@@ -47,6 +47,12 @@ if 'logged_in' not in st.session_state:
     st.session_state.username = ""
     st.session_state.user_role = ""
 
+# সার্চ রেজাল্ট ধরে রাখার মেমোরি স্টেট
+if 'search_results' not in st.session_state:
+    st.session_state.search_results = None
+if 'searched' not in st.session_state:
+    st.session_state.searched = False
+
 # ৩. লগইন স্ক্রিন
 if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -88,6 +94,8 @@ if st.sidebar.button("🚪 Logout"):
     if st.session_state.username in st.session_state.active_sessions:
         st.session_state.active_sessions.remove(st.session_state.username)
     st.session_state.logged_in = False
+    st.session_state.search_results = None
+    st.session_state.searched = False
     st.rerun()
 
 st.sidebar.divider()
@@ -187,23 +195,19 @@ with tab1:
         provider_list = ["All Providers"]
         for p_col in ['Provider', 'Operator', 'OPERATOR', 'NetWork']:
             if p_col in df.columns:
-                provider_list += list(df[p_col].dropna().unique())
+                provider_list += list(df[p_col].dropna().astype(str).unique())
                 break
         provider = st.selectbox("Provider", provider_list)
         
     with col_m:
         search_method = st.selectbox("Search Method", ["Lac & Cell", "Lat & Long", "Address/Location"])
 
-    results = pd.DataFrame()
-    
     if search_method == "Lac & Cell":
         c1, c2 = st.columns(2)
         lac_input = c1.text_input("LAC").strip()
         cell_input = c2.text_input("Cell ID").strip()
         
-        search_btn = st.button("🔍 সার্চ করুন", type="primary")
-        
-        if search_btn:
+        if st.button("🔍 সার্চ করুন", type="primary"):
             filtered_df = df.copy()
             
             # প্রোভাইডার ফিল্টার
@@ -222,51 +226,54 @@ with tab1:
             if cell_cols and cell_input:
                 filtered_df = filtered_df[filtered_df[cell_cols[0]].astype(str) == cell_input]
                 
-            results = filtered_df
+            # ফলাফল স্টেট এ সেভ করা
+            st.session_state.search_results = filtered_df
+            st.session_state.searched = True
 
-    # ফলাফল ও ম্যাপ রিপ্রেজেন্টেশন
-    if not results.empty:
-        st.success(f"🎯 মোট {len(results)} টি ফলাফল পাওয়া গেছে!")
-        st.dataframe(results)
+    # ফলাফল স্টেট থেকে ধরে রেখে রেন্ডার করা
+    if st.session_state.searched:
+        results = st.session_state.search_results
         
-        # Lat/Long কলাম খুঁজে বের করা
-        lat_cols = [c for c in results.columns if 'lat' in c.lower()]
-        lon_cols = [c for c in results.columns if 'lon' in c.lower() or 'lng' in c.lower()]
-        
-        if lat_cols and lon_cols:
-            first_row = results.iloc[0]
-            try:
-                lat = float(first_row[lat_cols[0]])
-                lon = float(first_row[lon_cols[0]])
-                
-                # ম্যাপ তৈরি
-                m = folium.Map(location=[lat, lon], zoom_start=15)
-                Fullscreen().add_to(m)
-                
-                # মার্কার যুক্ত করা
-                popup_text = "<br>".join([f"<b>{col}:</b> {first_row[col]}" for col in results.columns[:6]])
-                folium.Marker(
-                    location=[lat, lon],
-                    popup=folium.Popup(popup_text, max_width=300),
-                    icon=folium.Icon(color="red", icon="signal", prefix="fa")
-                ).add_to(m)
-                
-                # কভারেজ সার্কেল
-                folium.Circle(
-                    radius=350,
-                    location=[lat, lon],
-                    color="red",
-                    fill=True,
-                    fill_opacity=0.2
-                ).add_to(m)
-                
-                st_folium(m, width="100%", height=500)
-            except Exception as e:
-                st.error("Latitude/Longitude তথ্য সংখ্যায় রূপান্তর করা যায়নি।")
+        if results is not None and not results.empty:
+            st.success(f"🎯 মোট {len(results)} টি ফলাফল পাওয়া গেছে!")
+            st.dataframe(results)
+            
+            # Lat/Long কলাম সনাক্তকরণ
+            lat_cols = [c for c in results.columns if 'lat' in c.lower()]
+            lon_cols = [c for c in results.columns if 'lon' in c.lower() or 'lng' in c.lower()]
+            
+            if lat_cols and lon_cols:
+                first_row = results.iloc[0]
+                try:
+                    lat = float(first_row[lat_cols[0]])
+                    lon = float(first_row[lon_cols[0]])
+                    
+                    m = folium.Map(location=[lat, lon], zoom_start=15)
+                    Fullscreen().add_to(m)
+                    
+                    popup_text = "<br>".join([f"<b>{col}:</b> {first_row[col]}" for col in results.columns[:6]])
+                    folium.Marker(
+                        location=[lat, lon],
+                        popup=folium.Popup(popup_text, max_width=300),
+                        icon=folium.Icon(color="red", icon="signal", prefix="fa")
+                    ).add_to(m)
+                    
+                    folium.Circle(
+                        radius=350,
+                        location=[lat, lon],
+                        color="red",
+                        fill=True,
+                        fill_opacity=0.2
+                    ).add_to(m)
+                    
+                    # returned_objects=[] যুক্ত করার ফলে ম্যাপে ইন্টারঅ্যাকশন করলেও সার্চ রেজাল্ট রিসেট হবে না
+                    st_folium(m, width="100%", height=500, returned_objects=[])
+                except Exception as e:
+                    st.error("Latitude/Longitude তথ্য সংখ্যায় রূপান্তর করা যায়নি।")
+            else:
+                st.warning("ফলাফলে Latitude এবং Longitude কলাম পাওয়া যায়নি।")
         else:
-            st.warning("ফলাফলে Latitude এবং Longitude কলাম পাওয়া যায়নি।")
-    elif 'search_btn' in locals() and search_btn:
-        st.error("❌ প্রদত্ত LAC ও Cell ID দিয়ে কোনো ম্যাচ পাওয়া যায়নি!")
+            st.error("❌ প্রদত্ত LAC ও Cell ID দিয়ে কোনো ম্যাচ পাওয়া যায়নি!")
 
 with tab2:
     st.write("একাধিক LAC/Cell ID একসাথে সার্চ করার সুবিধা।")

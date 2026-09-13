@@ -9,7 +9,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন (সাইডবার ফোর্সবলি ওপেন)
+# ১. পেজ কনফিগারেশন
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -17,24 +17,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (সাইডবার স্থায়ীভাবে দৃশ্যমান রাখার জন্য লক সিএসএস)
+# ২. কাস্টম সিএসএস
 st.markdown("""
     <style>
-        /* সাইডবার স্থায়ীভাবে শো করার স্টাইল */
-        [data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
-            min-width: 320px !important;
-            max-width: 350px !important;
-            transform: none !important;
-        }
-        
-        /* সাইডবার বন্ধ করার বাটন ও অতিরিক্ত হেডার লুকানো */
-        [data-testid="stSidebarCollapseButton"],
-        button[kind="header"] {
-            display: none !important;
-        }
-
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
@@ -47,25 +32,24 @@ st.markdown("""
             max-width: 100% !important;
         }
         
-        [data-testid="stSidebar"] .profile-name-text,
-        [data-testid="stSidebar"] div.profile-name-text,
-        .profile-name-text {
-            font-size: 20px !important;
-            font-weight: bold !important;
+        .profile-name-display {
+            font-size: 22px !important;
+            font-weight: 800 !important;
             color: #FFFFFF !important;
-            margin-bottom: 5px !important;
+            margin-bottom: 6px !important;
             display: block !important;
+            line-height: 1.2 !important;
         }
 
         .role-badge {
             background-color: #007bff !important;
             color: #ffffff !important;
-            padding: 3px 10px !important;
+            padding: 4px 12px !important;
             border-radius: 12px !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             font-weight: bold !important;
             display: inline-block !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 12px !important;
         }
 
         [data-testid="stSidebar"] .contact-box,
@@ -129,6 +113,10 @@ def load_users():
             with open(USER_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if data and isinstance(data, dict):
+                    # এডমিনের নাম ফিক্স নিশ্চিত করা
+                    if "admin" in data:
+                        data["admin"]["name"] = "ASI Shamim BPM"
+                        data["admin"]["role"] = "Admin"
                     return data
                 return default_users
         except Exception:
@@ -191,13 +179,19 @@ if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৫. মূল ড্যাশবোর্ড ও সাইডবার ------------------
+# ------------------ ৫. মূল ড্যাশবোর্ড ও সাইডবার হেডার ------------------
 current_username = st.session_state['username']
 user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
-is_admin = user_info.get('role') == "Admin"
 
-st.sidebar.markdown(f'<div class="profile-name-text">{user_info.get("name", current_username)}</div>', unsafe_allow_html=True)
-st.sidebar.markdown(f'<span class="role-badge">{user_info.get("role", "User")} Panel</span>', unsafe_allow_html=True)
+# এডমিন কিনা সঠিকভাবে চিহ্নিত করা
+user_role = str(user_info.get('role', '')).lower()
+is_admin = (current_username == "admin") or (user_role == "admin")
+
+display_name = "ASI Shamim BPM" if current_username == "admin" else user_info.get("name", current_username)
+display_role = "Admin" if is_admin else "User"
+
+st.sidebar.markdown(f'<div class="profile-name-display">👤 {display_name}</div>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<span class="role-badge">{display_role} Panel</span>', unsafe_allow_html=True)
 
 if st.sidebar.button("🚪 Logout", key="logout_btn"):
     if current_username in st.session_state.active_users:
@@ -208,20 +202,20 @@ if st.sidebar.button("🚪 Logout", key="logout_btn"):
 
 st.sidebar.markdown("---")
 
-# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল ------------------
+# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল (ইউজার ক্রিয়েট অপশন) ------------------
 if is_admin:
-    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
-        st.write(f"👥 **বর্তমানে সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
+    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=True):
+        st.write(f"👥 **সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
         st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
         
         st.markdown("---")
-        st.markdown("**➕ নতুন ইউজার ক্রিয়েট করুন:**")
+        st.markdown("**➕ নতুন ইউজার তৈরি করুন:**")
         new_name = st.text_input("ইউজারের নাম", key="admin_new_name").strip()
         new_userid = st.text_input("User ID (ইউজারনেম)", key="admin_new_uid").strip().lower()
         new_password = st.text_input("পাসওয়ার্ড", type="password", key="admin_new_pass").strip()
         new_role = st.selectbox("ইউজার রোল", ["User", "Admin"], key="admin_new_role")
         
-        if st.button("নতুন ইউজার তৈরি করুন", use_container_width=True):
+        if st.button("নতুন ইউজার সেভ করুন", type="primary", use_container_width=True):
             if new_userid and new_password:
                 if new_userid not in st.session_state.users_db:
                     st.session_state.users_db[new_userid] = {
@@ -232,6 +226,7 @@ if is_admin:
                     save_users(st.session_state.users_db)
                     st.session_state.users_db = load_users()
                     st.success(f"✅ ইউজার '{new_userid}' সফলভাবে ক্রিয়েট হয়েছে!")
+                    st.rerun()
                 else:
                     st.warning("⚠️ এই ইউজার আইডিটি ইতিমধ্যে বিদ্যমান!")
             else:

@@ -17,56 +17,55 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (হেডার আইকন, গিটহাব লিঙ্ক এবং Manage App সম্পূর্ণ লুকানোর জন্য)
+# ২. কাস্টম সিএসএস (হেডার, এডিট আইকন, গিটহাব আইকন, ম্যানুয়ালি হেডার বার এবং Manage App সম্পূর্ণরূপে গায়েব করার সিএসএস)
 st.markdown("""
     <style>
-        /* সাইডবার লক ও ভিজিবিলিটি ফিক্স */
-        [data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
-            width: 330px !important;
+        /* টপ হেডার বার সম্পূর্ণ হাইড করা */
+        header[data-testid="stHeader"] {
+            display: none !important;
+            height: 0px !important;
         }
-
-        /* হেডার কন্টেইনার দৃশ্যমান রাখা কিন্তু টপ-রাইট মেনু আইকনসমূহ গায়েব করা */
-        [data-testid="stHeader"] {
-            display: flex !important;
-            visibility: visible !important;
-            background-color: transparent !important;
-        }
-
-        /* টপ-রাইটের Share, Edit, GitHub এবং সম্পর্কিত আইকন লুকানো */
+        
+        /* টপ-রাইট আইকন, এডিট, গিটহাব এবং হেডার টুলবার সম্পূর্ণ গায়েব */
         [data-testid="stAppHeaderToolbar"],
         [data-testid="stHeaderNav"],
         .stAppHeaderToolbar,
         button[title="Edit this app"],
-        a[href*="github.com"] {
-            display: none !important;
+        a[href*="github.com"],
+        header {
             visibility: hidden !important;
+            display: none !important;
+            opacity: 0 !important;
+            height: 0px !important;
         }
 
-        /* নিচে ডানপাশের Manage App বাটন ও ফুটার লুকানো */
+        /* সাইডবার মার্জিন এবং ফিক্সড পজিশনিং */
+        [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
+            width: 330px !important;
+            padding-top: 0rem !important;
+        }
+
+        /* নিচে ডানপাশের Manage App বাটন, ফুটার ও ওয়াটারমার্ক হাইড */
         [data-testid="stStatusWidget"],
         footer,
-        #MainMenu {
+        #MainMenu,
+        .viewerBadge_container__1A5G2,
+        .styles_viewerBadge__1yB5_ {
             display: none !important;
             visibility: hidden !important;
-        }
-        
-        button[data-testid="stSidebarCollapseButton"],
-        button[aria-label="Toggle sidebar"],
-        button[aria-label="Open sidebar"],
-        button[aria-label="Close sidebar"] {
-            display: flex !important;
-            visibility: visible !important;
-            color: #ffffff !important;
+            opacity: 0 !important;
         }
 
+        /* মূল পেজের প্যাডিং ফিক্স */
         .block-container {
-            padding-top: 2rem !important;
+            padding-top: 1.5rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
 
+        /* ইউজার প্রোফাইল ও ভূমিকা ব্যাজ */
         .profile-name-display {
             font-size: 22px !important;
             font-weight: 800 !important;
@@ -87,7 +86,6 @@ st.markdown("""
             margin-bottom: 12px !important;
         }
 
-        [data-testid="stSidebar"] .contact-box,
         .contact-box {
             background-color: #ffffff !important;
             border: 2px solid #ff4b4b !important;
@@ -96,12 +94,7 @@ st.markdown("""
             padding: 12px 14px !important;
             margin-top: 15px !important;
             margin-bottom: 15px !important;
-        }
-
-        [data-testid="stSidebar"] .contact-box *,
-        .contact-box * {
             color: #111827 !important;
-            font-weight: 600 !important;
         }
 
         .site-card {
@@ -120,9 +113,6 @@ st.markdown("""
             align-items: center;
             font-size: 17px;
             color: #1a1a1a;
-        }
-        .site-details-inline div {
-            font-size: 17px;
         }
         .site-address-text {
             margin-top: 10px;
@@ -221,7 +211,7 @@ user_role = str(user_info.get('role', '')).lower()
 is_admin = (current_username == "admin") or (user_role == "admin")
 
 display_name = "ASI Shamim BPM" if current_username == "admin" else user_info.get("name", current_username)
-display_role = "Admin" if is_admin else "User"
+display_role = "Admin" if is_admin else "General User"
 
 st.sidebar.markdown(f'<div class="profile-name-display">👤 {display_name}</div>', unsafe_allow_html=True)
 st.sidebar.markdown(f'<span class="role-badge">{display_role} Panel</span>', unsafe_allow_html=True)
@@ -237,7 +227,7 @@ st.sidebar.markdown("---")
 
 # ------------------ ৬. এডমিন কন্ট্রোল প্যানেল ------------------
 if is_admin:
-    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=True):
+    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
         st.write(f"👥 **সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
         st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
         
@@ -290,7 +280,7 @@ st.sidebar.markdown("---")
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
-@st.cache_data(show_spinner="ডেটা দ্রুত প্রক্রিয়াকরণ হচ্ছে...")
+@st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
     filename = file_or_path if isinstance(file_or_path, str) else file_or_path.name
     
@@ -364,7 +354,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৮. ফাইল ও সাইডবার (শুধু Admin এর জন্য দৃশ্যমান) ------------------
+# ------------------ ৮. ফাইল লোড (ডাটা সোর্স বক্স সম্পূর্ণ এডমিন কন্ট্রোলড) ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
@@ -377,6 +367,7 @@ if all_files:
         if is_admin:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
+# শুধুমাত্র Admin এর জন্য "ডেটা সোর্স" এবং লোড হওয়া বক্সটি দৃশ্যমান থাকবে
 if is_admin:
     st.sidebar.header("📁 ডেটা সোর্স")
     if auto_file and df is not None:
@@ -389,8 +380,15 @@ if is_admin:
             st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
         except Exception as e:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
+    st.sidebar.markdown("---")
+else:
+    # সাধারণ ইউজারদের জন্য ডেটা সোর্স বক্সটি সম্পূর্ণ লুকানো কিন্তু ব্যাকএন্ডে ফাইলটি লোড থাকবে
+    if auto_file and df is None:
+        try:
+            df = load_data_optimized(auto_file)
+        except Exception:
+            pass
 
-st.sidebar.markdown("---")
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
 map_theme = st.sidebar.selectbox(
     "ম্যাপের স্টাইল:",
@@ -398,13 +396,6 @@ map_theme = st.sidebar.selectbox(
 )
 sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
-
-st.sidebar.markdown("""
-    <div class="contact-box">
-        📞 <b>এডমিন হটলাইন:</b><br>
-        <span>01914594294</span>
-    </div>
-""", unsafe_allow_html=True)
 
 def render_folium_map(center_lat, center_lon, zoom=18):
     if map_theme == "Google Hybrid":

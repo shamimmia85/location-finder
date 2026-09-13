@@ -79,8 +79,8 @@ st.markdown("""
         }
 
         .profile-img {
-            width: 45px;
-            height: 45px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #007bff;
@@ -222,20 +222,23 @@ if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৬. সাইডবার ও ইউজার হেডার (ছবিসহ) ------------------
+# ------------------ ৬. সাইডবার ও ইউজার হেডার ------------------
 current_username = st.session_state['username']
 user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
 
 user_role = str(user_info.get('role', '')).lower()
 is_admin = (current_username == "admin") or (user_role == "admin")
 
-display_name = "ASI Shamim BPM" if current_username == "admin" else user_info.get("name", current_username)
+display_name = user_info.get("name", current_username)
 display_role = "Admin" if is_admin else "General User"
 
-# প্রোফাইল পিকচার চেক
-img_b64 = get_image_base64("profile.jpg")  # রিপোজিটরিতে থাকা profile.jpg/png লোড করবে
+# এডমিনের ছবি চেক (শুধুমাত্র এডমিনের অ্যাকাউন্ট হলে ছবি দেখাবে)
+img_b64 = None
+if is_admin:
+    # এখানে ফাইল নেমটি চেক করা হয় (profile.jpg.jpg অথবা profile.jpg)
+    img_b64 = get_image_base64("profile.jpg.jpg") or get_image_base64("profile.jpg")
 
-if img_b64:
+if is_admin and img_b64:
     profile_html = f"""
     <div class="profile-container">
         <img src="data:image/jpeg;base64,{img_b64}" class="profile-img">
@@ -265,14 +268,20 @@ st.sidebar.markdown("---")
 # ------------------ ৭. এডমিন কন্ট্রোল প্যানেল ------------------
 if is_admin:
     with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
-        st.write(f"👥 **সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
+        st.write(f"👥 **অনলাইন/সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
         st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
         
         st.markdown("---")
         st.markdown("**➕ নতুন ইউজার তৈরি করুন:**")
-        new_name = st.text_input("ইউজারের নাম", key="admin_new_name").strip()
-        new_userid = st.text_input("User ID (ইউজারনেম)", key="admin_new_uid").strip().lower()
-        new_password = st.text_input("পাসওয়ার্ড", type="password", key="admin_new_pass").strip()
+        
+        # ইনপুট ফিল্ডের কি (State) নিয়ন্ত্রণ
+        if "new_name_val" not in st.session_state: st.session_state.new_name_val = ""
+        if "new_uid_val" not in st.session_state: st.session_state.new_uid_val = ""
+        if "new_pass_val" not in st.session_state: st.session_state.new_pass_val = ""
+
+        new_name = st.text_input("ইউজারের নাম", value=st.session_state.new_name_val, key="admin_new_name").strip()
+        new_userid = st.text_input("User ID (ইউজারনেম)", value=st.session_state.new_uid_val, key="admin_new_uid").strip().lower()
+        new_password = st.text_input("পাসওয়ার্ড", type="password", value=st.session_state.new_pass_val, key="admin_new_pass").strip()
         new_role = st.selectbox("ইউজার রোল", ["User", "Admin"], key="admin_new_role")
         
         if st.button("নতুন ইউজার সেভ করুন", type="primary", use_container_width=True):
@@ -285,6 +294,12 @@ if is_admin:
                     }
                     save_users(st.session_state.users_db)
                     st.session_state.users_db = load_users()
+                    
+                    # ফর্ম ফিল্ড ক্লিয়ার করা
+                    st.session_state.new_name_val = ""
+                    st.session_state.new_uid_val = ""
+                    st.session_state.new_pass_val = ""
+                    
                     st.success(f"✅ ইউজার '{new_userid}' সফলভাবে ক্রিয়েট হয়েছে!")
                     st.rerun()
                 else:

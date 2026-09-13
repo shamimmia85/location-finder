@@ -12,10 +12,10 @@ from math import radians, cos, sin, asin, sqrt
 # ১. পেজ কনফিগারেশন
 st.set_page_config(page_title="Location Finder Dashboard", page_icon="📡", layout="wide")
 
-# ২. কাস্টম সিএসএস (ডার্ক মোড কালার কন্ট্রাস্ট ফিক্স)
+# ২. কাস্টম সিএসএস (ডার্ক মোড কালার ফিক্স)
 st.markdown("""
     <style>
-        /* এডিট আইকন, গিটহাব ও স্ট্রীমলিট মেকার টুলবার হাইড */
+        /* মেকার টুলবার ও এডিট বোতাম হাইড */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
@@ -27,31 +27,48 @@ st.markdown("""
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
-        hr {
-            margin-top: 0.8rem !important;
-            margin-bottom: 0.8rem !important;
-        }
-        .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-            margin-bottom: 0.3rem !important;
-        }
         
-        /* প্রোফাইল নাম ডার্ক মোড ফিক্স */
+        /* ১. সাইডবার প্রোফাইল নামের টেক্সট ডার্ক মোড ফিক্স */
+        [data-testid="stSidebar"] .profile-name-text,
+        [data-testid="stSidebar"] div.profile-name-text,
         .profile-name-text {
-            font-size: 20px;
-            font-weight: bold;
-            color: #ffffff !important;
-            margin-bottom: 5px;
+            font-size: 20px !important;
+            font-weight: bold !important;
+            color: #FFFFFF !important;
+            margin-bottom: 5px !important;
+            display: block !important;
         }
+
         .role-badge {
-            background-color: #007bff;
+            background-color: #007bff !important;
             color: #ffffff !important;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 10px;
+            padding: 3px 10px !important;
+            border-radius: 12px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            display: inline-block !important;
+            margin-bottom: 10px !important;
         }
+
+        /* ২. এডমিন কন্টাক্ট বক্স ও লেখার কালার ফিক্স */
+        [data-testid="stSidebar"] .contact-box,
+        .contact-box {
+            background-color: #ffffff !important;
+            border: 2px solid #ff4b4b !important;
+            border-left: 6px solid #ff4b4b !important;
+            border-radius: 8px !important;
+            padding: 12px 14px !important;
+            margin-top: 15px !important;
+            margin-bottom: 15px !important;
+        }
+
+        /* কন্টাক্ট বক্সের ভেতরের সব লেখা ডার্ক মোডেও কালো/স্পষ্ট থাকবে */
+        [data-testid="stSidebar"] .contact-box *,
+        .contact-box * {
+            color: #111827 !important;
+            font-weight: 600 !important;
+        }
+
         .site-card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -77,27 +94,13 @@ st.markdown("""
             font-size: 17px;
             color: #1a1a1a;
         }
-        
-        /* ডার্ক ও লাইট উভয় মোডে এডমিন কন্টাক্ট বক্স ও টেক্সট কালার ফিক্স */
-        .contact-box {
-            background-color: #1e293b !important;
-            color: #ffffff !important;
-            padding: 14px;
-            border-radius: 8px;
-            border-left: 5px solid #ff4b4b;
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
-        .contact-box b, .contact-box span, .contact-box div, .contact-box p {
-            color: #ffffff !important;
-        }
         iframe {
             width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# ------------------ ৩. স্থায়ী ইউজার ডাটাবেস সেভ ও লোড ------------------
+# ------------------ ৩. ইউজার ডাটাবেস ------------------
 USER_FILE = "users_db.json"
 
 def load_users():
@@ -131,7 +134,7 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
-# ------------------ ৪. লগইন স্ক্রিন ------------------
+# ------------------ ৪. লগইন পেজ ------------------
 def login():
     st.title("🔒 Location Finder Dashboard - Login")
     col1, col2 = st.columns([1, 2])
@@ -150,11 +153,10 @@ def login():
             else:
                 st.error("❌ ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!")
 
-        # যোগাযোগের নম্বর
         st.markdown("""
             <div class="contact-box">
-                📞 <b>প্রয়োজনে এডমিনের সাথে যোগাযোগ করুন:</b><br>
-                মোবাইল নম্বর: <b>01914594294</b>
+                📞 <b>জরুরী প্রয়োজনে এডমিনের সাথে যোগাযোগ:</b><br>
+                মোবাইল নাম্বার: <b>01914594294</b>
             </div>
         """, unsafe_allow_html=True)
 
@@ -162,12 +164,12 @@ if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৫. লগইন পরবর্তী তথ্য ও প্রোফাইল ------------------
+# ------------------ ৫. মূল ড্যাশবোর্ড ও সাইডবার ------------------
 current_username = st.session_state['username']
 user_info = st.session_state.users_db[current_username]
 is_admin = user_info['role'] == "Admin"
 
-# সাইডবার ইউজার প্রোফাইল
+# সাইডবার নাম ও রোল
 st.sidebar.markdown(f'<div class="profile-name-text">{user_info["name"]}</div>', unsafe_allow_html=True)
 st.sidebar.markdown(f'<span class="role-badge">{user_info["role"]} Panel</span>', unsafe_allow_html=True)
 
@@ -208,7 +210,7 @@ if is_admin:
             else:
                 st.error("আইডি এবং পাসওয়ার্ড উভয়ই পূরণ করুন।")
 
-# ------------------ ৭. সেটিংস (পাসওয়ার্ড পরিবর্তন) ------------------
+# ------------------ ৭. পাসওয়ার্ড পরিবর্তন ------------------
 with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
     curr_pass = st.text_input("বর্তমান পাসওয়ার্ড", type="password", key="c_pass")
     new_pass = st.text_input("নতুন পাসওয়ার্ড", type="password", key="n_pass")
@@ -227,7 +229,6 @@ with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
 
 st.sidebar.markdown("---")
 
-# টাইটেল
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
@@ -306,7 +307,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৮. ডেটা ফাইল লোড ------------------
+# ------------------ ৮. ফাইল ও সাইডবার ------------------
 st.sidebar.header("📁 ডেটা সোর্স")
 
 df = None
@@ -331,7 +332,6 @@ if is_admin:
 else:
     st.sidebar.info("💡 সাধারণ ইউজারগণ শুধুমাত্র প্রস্তুতকৃত ডেটাবেস অনুসন্ধান করতে পারবেন।")
 
-# সাইডবার ম্যাপ সেটিংস
 st.sidebar.markdown("---")
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
 map_theme = st.sidebar.selectbox(
@@ -341,15 +341,14 @@ map_theme = st.sidebar.selectbox(
 sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-# অ্যাডমিন কন্টাক্ট বক্স (সাইডবার)
+# সাইডবারে স্পষ্ট কন্টাক্ট বক্স
 st.sidebar.markdown("""
     <div class="contact-box">
         📞 <b>এডমিন হটলাইন:</b><br>
-        01914594294
+        <span>01914594294</span>
     </div>
 """, unsafe_allow_html=True)
 
-# ম্যাপ হেল্পার ফাংশন
 def render_folium_map(center_lat, center_lon, zoom=15):
     if map_theme == "Google Hybrid":
         m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles=None)
@@ -365,7 +364,7 @@ def render_folium_map(center_lat, center_lon, zoom=15):
     Fullscreen(position='topright').add_to(m)
     return m
 
-# ------------------ ৯. মূল সার্চ ইন্টারফেস ------------------
+# ------------------ ৯. মূল সার্চ ------------------
 if df is not None:
     st.markdown("---")
     
@@ -381,7 +380,6 @@ if df is not None:
 
     tab1, tab2 = st.tabs(["🔍 Tower Search (Single)", "📑 Multiple Search (একাধিক সার্চ)"])
 
-    # ------------------ ট্যাব ১: একক সার্চ ------------------
     with tab1:
         p_col1, p_col2 = st.columns(2)
 
@@ -475,7 +473,6 @@ if df is not None:
 
             st.session_state['single_search_df'] = temp_df
 
-    # ------------------ ট্যাব ২: মাল্টি সার্চ ------------------
     with tab2:
         col1, col2 = st.columns(2)
         with col1: 

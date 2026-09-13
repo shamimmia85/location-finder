@@ -354,7 +354,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৮. ফাইল লোড (ডাটা সোর্স বক্স সম্পূর্ণ এডমিন কন্ট্রোলড) ------------------
+# ------------------ ৮. ফাইল লোড ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
@@ -367,7 +367,6 @@ if all_files:
         if is_admin:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
-# শুধুমাত্র Admin এর জন্য "ডেটা সোর্স" এবং লোড হওয়া বক্সটি দৃশ্যমান থাকবে
 if is_admin:
     st.sidebar.header("📁 ডেটা সোর্স")
     if auto_file and df is not None:
@@ -381,13 +380,6 @@ if is_admin:
         except Exception as e:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
     st.sidebar.markdown("---")
-else:
-    # সাধারণ ইউজারদের জন্য ডেটা সোর্স বক্সটি সম্পূর্ণ লুকানো কিন্তু ব্যাকএন্ডে ফাইলটি লোড থাকবে
-    if auto_file and df is None:
-        try:
-            df = load_data_optimized(auto_file)
-        except Exception:
-            pass
 
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
 map_theme = st.sidebar.selectbox(
@@ -468,9 +460,6 @@ if df is not None:
 
         search_button = st.button("🔍 সার্চ করুন", type="primary", use_container_width=True, key="single_btn")
 
-        if 'single_search_df' not in st.session_state:
-            st.session_state['single_search_df'] = None
-
         if search_button:
             temp_df = df.copy()
 
@@ -520,19 +509,16 @@ if df is not None:
                     st.warning("⚠️ ঠিকানা বা এলাকার নাম লিখুন।")
                     temp_df = pd.DataFrame()
 
-            st.session_state['single_search_df'] = temp_df
+            st.session_state['active_search_result'] = temp_df
 
     with tab2:
         col1, col2 = st.columns(2)
         with col1: 
-            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="24051, 24051", key="m_lac")
+            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="24051, 24051, 24051", key="m_lac")
         with col2: 
-            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="55408, 55409", key="m_cell")
+            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="55408, 55409, 55410", key="m_cell")
 
         multi_search_button = st.button("🔍 একাধিক সার্চ করুন", type="primary", use_container_width=True, key="multi_btn")
-
-        if 'multi_search_df' not in st.session_state:
-            st.session_state['multi_search_df'] = None
 
         if multi_search_button:
             lacs = [x.strip().replace('.0', '') for x in lac_list_input.split(",") if x.strip()]
@@ -542,19 +528,27 @@ if df is not None:
             s_cell = '_search_cell' if '_search_cell' in df.columns else cell_col
 
             if lacs and cells:
-                search_pairs = set(zip(lacs, cells))
-                st.session_state['multi_search_df'] = df[df.set_index([s_lac, s_cell]).index.isin(search_pairs)]
+                # সমপরিমাণ LAC ও Cell থাকলে পজিশনভিত্তিক জোড়া তৈরি
+                if len(lacs) == len(cells):
+                    search_pairs = set(zip(lacs, cells))
+                    conditions = pd.Series(False, index=df.index)
+                    for l, c in search_pairs:
+                        conditions |= ((df[s_lac] == l) & (df[s_cell] == c))
+                    res_df = df[conditions]
+                else:
+                    # অমিল থাকলে সব কম্বিনেশন ফিল্টার
+                    res_df = df[(df[s_lac].isin(lacs)) & (df[s_cell].isin(cells))]
             elif lacs:
-                st.session_state['multi_search_df'] = df[df[s_lac].isin(lacs)]
+                res_df = df[df[s_lac].isin(lacs)]
             elif cells:
-                st.session_state['multi_search_df'] = df[df[s_cell].isin(cells)]
+                res_df = df[df[s_cell].isin(cells)]
             else:
-                st.session_state['multi_search_df'] = pd.DataFrame()
+                res_df = pd.DataFrame()
 
-    filtered_df = st.session_state.get('single_search_df') if tab1 else st.session_state.get('multi_search_df')
+            st.session_state['active_search_result'] = res_df
 
-    if filtered_df is None and st.session_state.get('multi_search_df') is not None:
-        filtered_df = st.session_state.get('multi_search_df')
+    # রেজাল্ট প্রদর্শন
+    filtered_df = st.session_state.get('active_search_result', None)
 
     if filtered_df is not None:
         if not filtered_df.empty:

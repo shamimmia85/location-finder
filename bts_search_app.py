@@ -2,6 +2,7 @@ import os
 import glob
 import math
 import json
+import base64
 import streamlit as st
 import pandas as pd
 import folium
@@ -17,7 +18,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (হেডার, এডিট আইকন, গিটহাব আইকন, ম্যানুয়ালি হেডার বার এবং Manage App সম্পূর্ণরূপে গায়েব করার সিএসএস)
+# ২. ছবি লোড করার ফাংশন (Base64 এ রূপান্তর)
+def get_image_base64(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
+
+# ৩. কাস্টম সিএসএস
 st.markdown("""
     <style>
         /* টপ হেডার বার সম্পূর্ণ হাইড করা */
@@ -26,7 +34,6 @@ st.markdown("""
             height: 0px !important;
         }
         
-        /* টপ-রাইট আইকন, এডিট, গিটহাব এবং হেডার টুলবার সম্পূর্ণ গায়েব */
         [data-testid="stAppHeaderToolbar"],
         [data-testid="stHeaderNav"],
         .stAppHeaderToolbar,
@@ -39,7 +46,6 @@ st.markdown("""
             height: 0px !important;
         }
 
-        /* সাইডবার মার্জিন এবং ফিক্সড পজিশনিং */
         [data-testid="stSidebar"] {
             display: block !important;
             visibility: visible !important;
@@ -47,7 +53,6 @@ st.markdown("""
             padding-top: 0rem !important;
         }
 
-        /* নিচে ডানপাশের Manage App বাটন, ফুটার ও ওয়াটারমার্ক হাইড */
         [data-testid="stStatusWidget"],
         footer,
         #MainMenu,
@@ -58,20 +63,32 @@ st.markdown("""
             opacity: 0 !important;
         }
 
-        /* মূল পেজের প্যাডিং ফিক্স */
         .block-container {
             padding-top: 1.5rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
 
-        /* ইউজার প্রোফাইল ও ভূমিকা ব্যাজ */
+        /* প্রোফাইল হেডার লেআউট (ছবি + নাম) */
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .profile-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #007bff;
+        }
+
         .profile-name-display {
-            font-size: 22px !important;
+            font-size: 20px !important;
             font-weight: 800 !important;
             color: #FFFFFF !important;
-            margin-bottom: 6px !important;
-            display: block !important;
             line-height: 1.2 !important;
         }
 
@@ -125,7 +142,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ------------------ ৩. ইউজার ডাটাবেস ------------------
+# ------------------ ৪. ইউজার ডাটাবেস ------------------
 USER_FILE = "users_db.json"
 
 def load_users():
@@ -171,7 +188,7 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
-# ------------------ ৪. লগইন পেজ ------------------
+# ------------------ ৫. লগইন পেজ ------------------
 def login():
     st.title("🔒 Location Finder Dashboard - Login")
     col1, col2 = st.columns([1, 2])
@@ -203,7 +220,7 @@ if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৫. সাইডবার ও ইউজার হেডার ------------------
+# ------------------ ৬. সাইডবার ও ইউজার হেডার ------------------
 current_username = st.session_state['username']
 user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
 
@@ -213,7 +230,20 @@ is_admin = (current_username == "admin") or (user_role == "admin")
 display_name = "ASI Shamim BPM" if current_username == "admin" else user_info.get("name", current_username)
 display_role = "Admin" if is_admin else "General User"
 
-st.sidebar.markdown(f'<div class="profile-name-display">👤 {display_name}</div>', unsafe_allow_html=True)
+# প্রোফাইল পিকচার চেক ও প্রদর্শন
+img_b64 = get_image_base64("profile.jpg")  # আপনার ফাইলের নাম অনুযায়ী (profile.jpg/png)
+
+if img_b64:
+    profile_html = f"""
+    <div class="profile-container">
+        <img src="data:image/jpeg;base64,{img_b64}" class="profile-img">
+        <div class="profile-name-display">{display_name}</div>
+    </div>
+    """
+else:
+    profile_html = f'<div class="profile-name-display">👤 {display_name}</div>'
+
+st.sidebar.markdown(profile_html, unsafe_allow_html=True)
 st.sidebar.markdown(f'<span class="role-badge">{display_role} Panel</span>', unsafe_allow_html=True)
 
 if st.sidebar.button("🚪 Logout", key="logout_btn"):
@@ -225,7 +255,7 @@ if st.sidebar.button("🚪 Logout", key="logout_btn"):
 
 st.sidebar.markdown("---")
 
-# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল ------------------
+# ------------------ ৭. এডমিন কন্ট্রোল প্যানেল ------------------
 if is_admin:
     with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
         st.write(f"👥 **সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
@@ -255,7 +285,7 @@ if is_admin:
             else:
                 st.error("আইডি এবং পাসওয়ার্ড উভয়ই পূরণ করুন।")
 
-# ------------------ ৭. পাসওয়ার্ড পরিবর্তন ------------------
+# ------------------ ৮. পাসওয়ার্ড পরিবর্তন ------------------
 with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
     curr_pass = st.text_input("বর্তমান পাসওয়ার্ড", type="password", key="c_pass")
     new_pass = st.text_input("নতুন পাসওয়ার্ড", type="password", key="n_pass")
@@ -354,7 +384,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৮. ফাইল লোড ------------------
+# ------------------ ৯. ফাইল লোড ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
@@ -405,7 +435,7 @@ def render_folium_map(center_lat, center_lon, zoom=18):
     Fullscreen(position='topright').add_to(m)
     return m
 
-# ------------------ ৯. মূল সার্চ ------------------
+# ------------------ ১০. মূল সার্চ ------------------
 if df is not None:
     st.markdown("---")
     
@@ -528,7 +558,6 @@ if df is not None:
             s_cell = '_search_cell' if '_search_cell' in df.columns else cell_col
 
             if lacs and cells:
-                # সমপরিমাণ LAC ও Cell থাকলে পজিশনভিত্তিক জোড়া তৈরি
                 if len(lacs) == len(cells):
                     search_pairs = set(zip(lacs, cells))
                     conditions = pd.Series(False, index=df.index)
@@ -536,7 +565,6 @@ if df is not None:
                         conditions |= ((df[s_lac] == l) & (df[s_cell] == c))
                     res_df = df[conditions]
                 else:
-                    # অমিল থাকলে সব কম্বিনেশন ফিল্টার
                     res_df = df[(df[s_lac].isin(lacs)) & (df[s_cell].isin(cells))]
             elif lacs:
                 res_df = df[df[s_lac].isin(lacs)]
@@ -662,7 +690,7 @@ if df is not None:
                                         p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                                     )
                                     folium.Polygon(locations=wedge_points, color=color, weight=2, fill=True, fill_color=color, fill_opacity=0.35).add_to(m)
-                                except Exception:
+                                me:
                                     pass
 
                                 folium.CircleMarker(location=[p_lat, p_lon], radius=7, color="#d9534f", fill=True, fill_color="#d9534f", fill_opacity=0.9).add_to(m)

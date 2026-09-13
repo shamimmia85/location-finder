@@ -9,7 +9,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন (সাইডবার ডিফল্টভাবে খোলা রাখার ফিক্সসহ)
+# ১. পেজ কনফিগারেশন (সাইডবার ফোর্সবলি ওপেন)
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -17,9 +17,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (ডার্ক মোড কালার ও কনট্রাস্ট ফিক্স)
+# ২. কাস্টম সিএসএস (সাইডবার স্থায়ীভাবে দৃশ্যমান রাখার জন্য লক সিএসএস)
 st.markdown("""
     <style>
+        /* সাইডবার স্থায়ীভাবে শো করার স্টাইল */
+        [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
+            min-width: 320px !important;
+            max-width: 350px !important;
+            transform: none !important;
+        }
+        
+        /* সাইডবার বন্ধ করার বাটন ও অতিরিক্ত হেডার লুকানো */
+        [data-testid="stSidebarCollapseButton"],
+        button[kind="header"] {
+            display: none !important;
+        }
+
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}

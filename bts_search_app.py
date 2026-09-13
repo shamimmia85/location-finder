@@ -9,8 +9,13 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন
-st.set_page_config(page_title="Location Finder Dashboard", page_icon="📡", layout="wide")
+# ১. পেজ কনফিগারেশন (সাইডবার ডিফল্টভাবে খোলা রাখার ফিক্সসহ)
+st.set_page_config(
+    page_title="Location Finder Dashboard", 
+    page_icon="📡", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # ২. কাস্টম সিএসএস (ডার্ক মোড কালার ও কনট্রাস্ট ফিক্স)
 st.markdown("""
@@ -96,11 +101,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ------------------ ৩. ইউজার ডাটাবেস (ফিক্সড পাসওয়ার্ড) ------------------
+# ------------------ ৩. ইউজার ডাটাবেস ------------------
 USER_FILE = "users_db.json"
 
 def load_users():
-    # এখানে ডিফল্ট পাসওয়ার্ড adminpassword স্থায়ী করে দেওয়া হলো
     default_users = {
         "admin": {"password": "adminpassword", "role": "Admin", "name": "ASI Shamim BPM"},
         "user": {"password": "user123", "role": "User", "name": "General User"}
@@ -150,7 +154,6 @@ def login():
         submit = st.button("Log In", type="primary", use_container_width=True)
         
         if submit:
-            # লগইনের সময় তাজা ডাটা ফাইল থেকে রিড করবে
             st.session_state.users_db = load_users()
             db = st.session_state.users_db
             

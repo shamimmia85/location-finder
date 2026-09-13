@@ -9,7 +9,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন (সাইডবার সবসময় খোলা অবস্থায় থাকবে)
+# ১. পেজ কনফিগারেশন
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (সাইডবার ভিজিবিলিটি ফিক্স)
+# ২. কাস্টম সিএসএস (হেডার আইকন, গিটহাব লিঙ্ক এবং Manage App সম্পূর্ণ লুকানোর জন্য)
 st.markdown("""
     <style>
         /* সাইডবার লক ও ভিজিবিলিটি ফিক্স */
@@ -27,11 +27,29 @@ st.markdown("""
             width: 330px !important;
         }
 
-        /* হেডার ও সাইডবার টগল তীর আইকন দৃশ্যমান রাখা */
+        /* হেডার কন্টেইনার দৃশ্যমান রাখা কিন্তু টপ-রাইট মেনু আইকনসমূহ গায়েব করা */
         [data-testid="stHeader"] {
             display: flex !important;
             visibility: visible !important;
             background-color: transparent !important;
+        }
+
+        /* টপ-রাইটের Share, Edit, GitHub এবং সম্পর্কিত আইকন লুকানো */
+        [data-testid="stAppHeaderToolbar"],
+        [data-testid="stHeaderNav"],
+        .stAppHeaderToolbar,
+        button[title="Edit this app"],
+        a[href*="github.com"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* নিচে ডানপাশের Manage App বাটন ও ফুটার লুকানো */
+        [data-testid="stStatusWidget"],
+        footer,
+        #MainMenu {
+            display: none !important;
+            visibility: hidden !important;
         }
         
         button[data-testid="stSidebarCollapseButton"],
@@ -42,10 +60,6 @@ st.markdown("""
             visibility: visible !important;
             color: #ffffff !important;
         }
-
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        button[title="Edit this app"] {display: none !important;}
 
         .block-container {
             padding-top: 2rem !important;
@@ -350,21 +364,24 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৮. ফাইল ও সাইডবার ------------------
-st.sidebar.header("📁 ডেটা সোর্স")
-
+# ------------------ ৮. ফাইল ও সাইডবার (শুধু Admin এর জন্য দৃশ্যমান) ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
+auto_file = None
 if all_files:
     auto_file = all_files[0]
     try:
         df = load_data_optimized(auto_file)
-        st.sidebar.success(f"📂 **{auto_file}** লোড হয়েছে! মোট রো: {len(df):,}")
     except Exception as e:
-        st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
+        if is_admin:
+            st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
 
 if is_admin:
+    st.sidebar.header("📁 ডেটা সোর্স")
+    if auto_file and df is not None:
+        st.sidebar.success(f"📂 **{auto_file}** লোড হয়েছে!\n\nমোট রো: {len(df):,}")
+        
     uploaded_file = st.sidebar.file_uploader("অন্য কোনো ফাইল আপলোড করুন (Admin Only):", type=["parquet", "csv", "xlsx"])
     if uploaded_file is not None:
         try:
@@ -372,8 +389,6 @@ if is_admin:
             st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
         except Exception as e:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
-else:
-    st.sidebar.info("💡 সাধারণ ইউজারগণ শুধুমাত্র প্রস্তুতকৃত ডেটাবেস অনুসন্ধান করতে পারবেন।")
 
 st.sidebar.markdown("---")
 st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
@@ -391,7 +406,6 @@ st.sidebar.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# জুম লেভেল বাড়িয়ে ১৮ করা হলো যাতে অনুসন্ধান মাত্রই ম্যাপ কাছে এবং বড় দেখায়
 def render_folium_map(center_lat, center_lon, zoom=18):
     if map_theme == "Google Hybrid":
         m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
@@ -590,7 +604,6 @@ if df is not None:
                         st.markdown("---")
                         st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
                         
-                        # সিঙ্গেল সার্চের জন্য Zoom Level = 18 রাখা হয়েছে
                         m = render_folium_map(lat_val, lon_val, zoom=18)
 
                         color = get_operator_color(row.get(provider_col, ''))
@@ -640,7 +653,6 @@ if df is not None:
                                 a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
                                 return R * 2 * asin(sqrt(a))
 
-                            # একাধিক টাওয়ার থাকলে ফিট করার জন্য
                             m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=18)
 
                             coords = []
@@ -697,7 +709,6 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            # একাধিক পয়েন্ট সার্চ করলে ম্যাপটি অটোমেটিক সবচেয়ে মানানসই জুমে ফিট হয়ে যাবে
                             if len(all_bounds) > 1:
                                 m.fit_bounds(all_bounds, padding=[30, 30])
 

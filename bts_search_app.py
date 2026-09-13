@@ -9,7 +9,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন (সাইডবার টগল তীর চিহ্ন সহ দৃশ্যমান থাকবে)
+# ১. পেজ কনফিগারেশন (সাইডবার সবসময় খোলা থাকবে)
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -17,21 +17,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (হেডার টগল বাটন দৃশ্যমান রাখার ফিক্স)
+# ২. কাস্টম সিএসএস (সাইডবার জোরপূর্বক দৃশ্যমান রাখার ফিক্স)
 st.markdown("""
     <style>
+        /* হেডার কাস্টমাইজেশন */
+        header {
+            visibility: visible !important;
+            background-color: transparent !important;
+            z-index: 999999 !important;
+        }
+        
+        /* টগল বাটন ও সাইডবার আইকন সবসময় দৃশ্যমান রাখা */
+        [data-testid="stSidebarNav"] {
+            display: block !important;
+        }
+        
+        button[aria-label="Toggle sidebar"],
+        button[aria-label="Close sidebar"],
+        button[aria-label="Open sidebar"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarExpandButton"] {
+            visibility: visible !important;
+            display: block !important;
+            opacity: 1 !important;
+            z-index: 1000000 !important;
+        }
+
+        /* সাইডবার লক & ভিজিবিলিটি ফিক্স */
+        [data-testid="stSidebar"] {
+            visibility: visible !important;
+            display: block !important;
+            min-width: 320px !important;
+        }
+
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
         button[title="Edit this app"] {display: none !important;}
         
-        /* হেডার কাস্টমাইজেশন - যেন তীর চিহ্ন visible থাকে */
-        header {
-            background-color: transparent !important;
-        }
-        
         .block-container {
-            padding-top: 2rem !important;
+            padding-top: 2.5rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }

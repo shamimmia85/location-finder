@@ -10,7 +10,7 @@ from streamlit_folium import st_folium
 # ১. পেজ কনফিগারেশন
 st.set_page_config(page_title="Location Finder Dashboard", page_icon="📡", layout="wide")
 
-# ২. ডার্ক মোড ফিক্স এবং এডিট বোতাম হাইড করার কাস্টম সিএসএস
+# ২. সিএসএস (এডিট অপশন হাইড ও ডার্ক মোড কালার ফিক্স)
 st.markdown("""
     <style>
         /* এডিট আইকন, গিটহাব আইকন ও স্ট্রীমলিট মেকার মেনু হাইড */
@@ -122,6 +122,8 @@ if not st.session_state.logged_in:
 st.sidebar.markdown(f"### 👤 {st.session_state.users_db[st.session_state.username]['name']}")
 if st.session_state.user_role == "admin":
     st.sidebar.markdown('<span style="background-color:#007bff; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">Admin Panel</span>', unsafe_allow_html=True)
+else:
+    st.sidebar.markdown('<span style="background-color:#6c757d; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">User Panel</span>', unsafe_allow_html=True)
 
 if st.sidebar.button("🚪 Logout"):
     if st.session_state.username in st.session_state.active_sessions:
@@ -133,7 +135,7 @@ if st.sidebar.button("🚪 Logout"):
 
 st.sidebar.divider()
 
-# ৬. এডমিন প্যানেল (স্থায়ী ইউজার তৈরি)
+# ৬. এডমিন প্যানেল (স্থায়ী ইউজার ম্যানেজমেন্ট)
 if st.session_state.user_role == "admin":
     with st.sidebar.expander("⚙️ Admin Control Panel", expanded=True):
         st.write(f"👥 **বর্তমানে মোট অ্যাক্টিভ ইউজার:** `{len(st.session_state.active_sessions)}` জন")
@@ -156,7 +158,7 @@ if st.session_state.user_role == "admin":
                         "role": "user",
                         "name": new_name if new_name else new_userid
                     }
-                    save_users(st.session_state.users_db)  # ফাইল স্থায়ীভাবে সেভ
+                    save_users(st.session_state.users_db)
                     st.success(f"✅ ইউজার '{new_userid}' সফলভাবে তৈরি হয়েছে!")
                 else:
                     st.warning("⚠️ এই ইউজার আইডিটি ইতিমধ্যে বিদ্যমান!")
@@ -240,7 +242,7 @@ with tab1:
 
     if search_method == "Lac & Cell":
         c1, c2 = st.columns(2)
-        # আলফাবেট বন্ধ করে সরাসরি নামপ্যাড/নাম্বার নেওয়ার জন্য number_input
+        # আলফাবেট বন্ধ করে সরাসরি নামপ্যাড পাওয়ার জন্য number_input
         lac_input = c1.number_input("LAC (সংখ্যার মাধ্যমে লিখুন)", value=None, step=1, format="%d")
         cell_input = c2.number_input("Cell ID (সংখ্যার মাধ্যমে লিখুন)", value=None, step=1, format="%d")
         

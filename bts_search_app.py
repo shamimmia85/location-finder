@@ -15,7 +15,6 @@ st.set_page_config(page_title="Location Finder Dashboard", page_icon="📡", lay
 # ২. কাস্টম সিএসএস (ডার্ক মোড কালার ও কনট্রাস্ট ফিক্স)
 st.markdown("""
     <style>
-        /* মেকার টুলবার ও এডিট বোতাম হাইড */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         header {visibility: hidden;}
@@ -28,7 +27,6 @@ st.markdown("""
             max-width: 100% !important;
         }
         
-        /* ১. সাইডবার প্রোফাইল নামের টেক্সট ডার্ক মোড ফিক্স */
         [data-testid="stSidebar"] .profile-name-text,
         [data-testid="stSidebar"] div.profile-name-text,
         .profile-name-text {
@@ -50,7 +48,6 @@ st.markdown("""
             margin-bottom: 10px !important;
         }
 
-        /* ২. এডমিন কন্টাক্ট বক্স ও লেখার কালার ফিক্স */
         [data-testid="stSidebar"] .contact-box,
         .contact-box {
             background-color: #ffffff !important;
@@ -62,7 +59,6 @@ st.markdown("""
             margin-bottom: 15px !important;
         }
 
-        /* কন্টাক্ট বক্সের ভেতরের সব লেখা ডার্ক মোডেও কালো/স্পষ্ট থাকবে */
         [data-testid="stSidebar"] .contact-box *,
         .contact-box * {
             color: #111827 !important;
@@ -100,10 +96,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ------------------ ৩. ইউজার ডাটাবেস ------------------
+# ------------------ ৩. ইউজার ডাটাবেস (ফিক্সড পাসওয়ার্ড) ------------------
 USER_FILE = "users_db.json"
 
 def load_users():
+    # এখানে ডিফল্ট পাসওয়ার্ড adminpassword স্থায়ী করে দেওয়া হলো
     default_users = {
         "admin": {"password": "adminpassword", "role": "Admin", "name": "ASI Shamim BPM"},
         "user": {"password": "user123", "role": "User", "name": "General User"}
@@ -111,7 +108,10 @@ def load_users():
     if os.path.exists(USER_FILE):
         try:
             with open(USER_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if data and isinstance(data, dict):
+                    return data
+                return default_users
         except Exception:
             return default_users
     else:
@@ -150,7 +150,7 @@ def login():
         submit = st.button("Log In", type="primary", use_container_width=True)
         
         if submit:
-            # সর্বদা ফাইল ও সেসন সম্পূর্ণ রিলোড করে পাসওয়ার্ড চেক করা
+            # লগইনের সময় তাজা ডাটা ফাইল থেকে রিড করবে
             st.session_state.users_db = load_users()
             db = st.session_state.users_db
             
@@ -178,7 +178,6 @@ current_username = st.session_state['username']
 user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
 is_admin = user_info.get('role') == "Admin"
 
-# সাইডবার নাম ও রোল
 st.sidebar.markdown(f'<div class="profile-name-text">{user_info.get("name", current_username)}</div>', unsafe_allow_html=True)
 st.sidebar.markdown(f'<span class="role-badge">{user_info.get("role", "User")} Panel</span>', unsafe_allow_html=True)
 
@@ -220,7 +219,7 @@ if is_admin:
             else:
                 st.error("আইডি এবং পাসওয়ার্ড উভয়ই পূরণ করুন।")
 
-# ------------------ ৭. পাসওয়ার্ড পরিবর্তন (সিঙ্ক আপডেট) ------------------
+# ------------------ ৭. পাসওয়ার্ড পরিবর্তন ------------------
 with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
     curr_pass = st.text_input("বর্তমান পাসওয়ার্ড", type="password", key="c_pass")
     new_pass = st.text_input("নতুন পাসওয়ার্ড", type="password", key="n_pass")
@@ -229,7 +228,6 @@ with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
     if st.button("পাসওয়ার্ড আপডেট করুন", use_container_width=True):
         if user_info["password"] == curr_pass:
             if new_pass and new_pass == conf_pass:
-                # সেসন স্টেট ও গ্লোবাল ডাটাবেস সম্পূর্ণ সিঙ্ক
                 st.session_state.users_db[current_username]["password"] = new_pass
                 save_users(st.session_state.users_db)
                 st.session_state.users_db = load_users()
@@ -246,7 +244,6 @@ st.sidebar.markdown("---")
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
-# ডেটা লোড ফাংশন
 @st.cache_data(show_spinner="ডেটা দ্রুত প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
     filename = file_or_path if isinstance(file_or_path, str) else file_or_path.name
@@ -355,7 +352,6 @@ map_theme = st.sidebar.selectbox(
 sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-# সাইডবারে স্পষ্ট কন্টাক্ট বক্স (ডার্ক মোড ফিক্সড)
 st.sidebar.markdown("""
     <div class="contact-box">
         📞 <b>এডমিন হটলাইন:</b><br>

@@ -9,7 +9,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন
+# ১. পেজ কনফিগারেশন (সাইডবার টগল তীর চিহ্ন সহ দৃশ্যমান থাকবে)
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -17,17 +17,21 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস
+# ২. কাস্টম সিএসএস (হেডার টগল বাটন দৃশ্যমান রাখার ফিক্স)
 st.markdown("""
     <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
-        header {visibility: hidden;}
         [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
         button[title="Edit this app"] {display: none !important;}
         
+        /* হেডার কাস্টমাইজেশন - যেন তীর চিহ্ন visible থাকে */
+        header {
+            background-color: transparent !important;
+        }
+        
         .block-container {
-            padding-top: 1.2rem !important;
+            padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
@@ -113,7 +117,6 @@ def load_users():
             with open(USER_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if data and isinstance(data, dict):
-                    # এডমিনের নাম ফিক্স নিশ্চিত করা
                     if "admin" in data:
                         data["admin"]["name"] = "ASI Shamim BPM"
                         data["admin"]["role"] = "Admin"
@@ -179,11 +182,10 @@ if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৫. মূল ড্যাশবোর্ড ও সাইডবার হেডার ------------------
+# ------------------ ৫. সাইডবার ও ইউজার হেডার ------------------
 current_username = st.session_state['username']
 user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
 
-# এডমিন কিনা সঠিকভাবে চিহ্নিত করা
 user_role = str(user_info.get('role', '')).lower()
 is_admin = (current_username == "admin") or (user_role == "admin")
 
@@ -202,7 +204,7 @@ if st.sidebar.button("🚪 Logout", key="logout_btn"):
 
 st.sidebar.markdown("---")
 
-# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল (ইউজার ক্রিয়েট অপশন) ------------------
+# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল (ইউজার ক্রিয়েট) ------------------
 if is_admin:
     with st.sidebar.expander("⚙️ Admin Control Panel", expanded=True):
         st.write(f"👥 **সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")

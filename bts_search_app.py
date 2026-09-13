@@ -9,7 +9,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন (সাইডবার সবসময় খোলা থাকবে)
+# ১. পেজ কনফিগারেশন (সাইডবার সবসময় খোলা অবস্থায় থাকবে)
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -17,50 +17,42 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (সাইডবার জোরপূর্বক দৃশ্যমান রাখার ফিক্স)
+# ২. কাস্টম সিএসএস (সাইডবার গায়েব হওয়া সম্পূর্ণ বন্ধ করার ফিক্স)
 st.markdown("""
     <style>
-        /* হেডার কাস্টমাইজেশন */
-        header {
-            visibility: visible !important;
-            background-color: transparent !important;
-            z-index: 999999 !important;
-        }
-        
-        /* টগল বাটন ও সাইডবার আইকন সবসময় দৃশ্যমান রাখা */
-        [data-testid="stSidebarNav"] {
+        /* সাইডবার লক ও ভিজিবিলিটি ফিক্স */
+        [data-testid="stSidebar"] {
             display: block !important;
-        }
-        
-        button[aria-label="Toggle sidebar"],
-        button[aria-label="Close sidebar"],
-        button[aria-label="Open sidebar"],
-        [data-testid="stSidebarCollapseButton"],
-        [data-testid="stSidebarExpandButton"] {
             visibility: visible !important;
-            display: block !important;
-            opacity: 1 !important;
-            z-index: 1000000 !important;
+            width: 330px !important;
         }
 
-        /* সাইডবার লক & ভিজিবিলিটি ফিক্স */
-        [data-testid="stSidebar"] {
+        /* হেডার ও সাইডবার টগল তীর আইকন দৃশ্যমান রাখা */
+        [data-testid="stHeader"] {
+            display: flex !important;
             visibility: visible !important;
-            display: block !important;
-            min-width: 320px !important;
+            background-color: transparent !important;
+        }
+        
+        button[data-testid="stSidebarCollapseButton"],
+        button[aria-label="Toggle sidebar"],
+        button[aria-label="Open sidebar"],
+        button[aria-label="Close sidebar"] {
+            display: flex !important;
+            visibility: visible !important;
+            color: #ffffff !important;
         }
 
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
-        [data-testid="stToolbar"] {visibility: hidden !important; display: none !important;}
         button[title="Edit this app"] {display: none !important;}
-        
+
         .block-container {
-            padding-top: 2.5rem !important;
+            padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
-        
+
         .profile-name-display {
             font-size: 22px !important;
             font-weight: 800 !important;

@@ -25,7 +25,7 @@ def get_image_base64(image_path):
             return base64.b64encode(img_file.read()).decode()
     return None
 
-# ৩. কাস্টম সিএসএস
+# ৩. কাস্টম সিএসএস (ডিজাইন ও প্রোফাইল ইমেজ স্টাইল)
 st.markdown("""
     <style>
         /* টপ হেডার বার সম্পূর্ণ হাইড করা */
@@ -75,6 +75,7 @@ st.markdown("""
             align-items: center;
             gap: 12px;
             margin-bottom: 8px;
+            margin-top: 10px;
         }
 
         .profile-img {
@@ -83,10 +84,11 @@ st.markdown("""
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #007bff;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.3);
         }
 
         .profile-name-display {
-            font-size: 20px !important;
+            font-size: 19px !important;
             font-weight: 800 !important;
             color: #FFFFFF !important;
             line-height: 1.2 !important;
@@ -220,7 +222,7 @@ if not st.session_state['authenticated']:
     login()
     st.stop()
 
-# ------------------ ৬. সাইডবার ও ইউজার হেডার ------------------
+# ------------------ ৬. সাইডবার ও ইউজার হেডার (ছবিসহ) ------------------
 current_username = st.session_state['username']
 user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
 
@@ -230,8 +232,8 @@ is_admin = (current_username == "admin") or (user_role == "admin")
 display_name = "ASI Shamim BPM" if current_username == "admin" else user_info.get("name", current_username)
 display_role = "Admin" if is_admin else "General User"
 
-# প্রোফাইল পিকচার চেক ও প্রদর্শন
-img_b64 = get_image_base64("profile.jpg")  # আপনার ফাইলের নাম অনুযায়ী (profile.jpg/png)
+# প্রোফাইল পিকচার চেক
+img_b64 = get_image_base64("profile.jpg")  # রিপোজিটরিতে থাকা profile.jpg/png লোড করবে
 
 if img_b64:
     profile_html = f"""
@@ -241,7 +243,12 @@ if img_b64:
     </div>
     """
 else:
-    profile_html = f'<div class="profile-name-display">👤 {display_name}</div>'
+    profile_html = f'''
+    <div class="profile-container">
+        <div style="font-size: 28px;">👤</div>
+        <div class="profile-name-display">{display_name}</div>
+    </div>
+    '''
 
 st.sidebar.markdown(profile_html, unsafe_allow_html=True)
 st.sidebar.markdown(f'<span class="role-badge">{display_role} Panel</span>', unsafe_allow_html=True)
@@ -690,7 +697,7 @@ if df is not None:
                                         p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                                     )
                                     folium.Polygon(locations=wedge_points, color=color, weight=2, fill=True, fill_color=color, fill_opacity=0.35).add_to(m)
-                                me:
+                                except Exception:
                                     pass
 
                                 folium.CircleMarker(location=[p_lat, p_lon], radius=7, color="#d9534f", fill=True, fill_color="#d9534f", fill_opacity=0.9).add_to(m)

@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. কাস্টম সিএসএস (সাইডবার গায়েব হওয়া সম্পূর্ণ বন্ধ করার ফিক্স)
+# ২. কাস্টম সিএসএস (সাইডবার ভিজিবিলিটি ফিক্স)
 st.markdown("""
     <style>
         /* সাইডবার লক ও ভিজিবিলিটি ফিক্স */
@@ -221,7 +221,7 @@ if st.sidebar.button("🚪 Logout", key="logout_btn"):
 
 st.sidebar.markdown("---")
 
-# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল (ইউজার ক্রিয়েট) ------------------
+# ------------------ ৬. এডমিন কন্ট্রোল প্যানেল ------------------
 if is_admin:
     with st.sidebar.expander("⚙️ Admin Control Panel", expanded=True):
         st.write(f"👥 **সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
@@ -391,18 +391,20 @@ st.sidebar.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-def render_folium_map(center_lat, center_lon, zoom=15):
+# জুম লেভেল বাড়িয়ে ১৮ করা হলো যাতে অনুসন্ধান মাত্রই ম্যাপ কাছে এবং বড় দেখায়
+def render_folium_map(center_lat, center_lon, zoom=18):
     if map_theme == "Google Hybrid":
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles=None)
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
         folium.TileLayer(
             tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
             attr='Google',
             name='Google Hybrid',
+            max_zoom=21,
             overlay=False,
             control=True
         ).add_to(m)
     else:
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles=map_theme)
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=map_theme)
     Fullscreen(position='topright').add_to(m)
     return m
 
@@ -518,9 +520,9 @@ if df is not None:
     with tab2:
         col1, col2 = st.columns(2)
         with col1: 
-            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="46, 838, 1200", key="m_lac")
+            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="24051, 24051", key="m_lac")
         with col2: 
-            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="1945, 32271", key="m_cell")
+            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="55408, 55409", key="m_cell")
 
         multi_search_button = st.button("🔍 একাধিক সার্চ করুন", type="primary", use_container_width=True, key="multi_btn")
 
@@ -588,7 +590,8 @@ if df is not None:
                         st.markdown("---")
                         st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
                         
-                        m = render_folium_map(lat_val, lon_val, zoom=15)
+                        # সিঙ্গেল সার্চের জন্য Zoom Level = 18 রাখা হয়েছে
+                        m = render_folium_map(lat_val, lon_val, zoom=18)
 
                         color = get_operator_color(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
@@ -614,7 +617,7 @@ if df is not None:
                             )
                         ).add_to(m)
                         
-                        st_folium(m, use_container_width=True, height=520, key="map_single")
+                        st_folium(m, use_container_width=True, height=550, key="map_single")
                         st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
                     except ValueError:
                         st.error("Latitude/Longitude মান সঠিক নয়।")
@@ -637,13 +640,17 @@ if df is not None:
                                 a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
                                 return R * 2 * asin(sqrt(a))
 
-                            m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=13)
+                            # একাধিক টাওয়ার থাকলে ফিট করার জন্য
+                            m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=18)
 
                             coords = []
+                            all_bounds = []
+
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
                                 color = get_operator_color(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
+                                all_bounds.append([p_lat, p_lon])
 
                                 m_lac = clean_val(row.get(lac_col))
                                 m_cell = clean_val(row.get(cell_col))
@@ -690,7 +697,11 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            st_folium(m, use_container_width=True, height=520, key="map_multi")
+                            # একাধিক পয়েন্ট সার্চ করলে ম্যাপটি অটোমেটিক সবচেয়ে মানানসই জুমে ফিট হয়ে যাবে
+                            if len(all_bounds) > 1:
+                                m.fit_bounds(all_bounds, padding=[30, 30])
+
+                            st_folium(m, use_container_width=True, height=550, key="map_multi")
 
                             origin = f"{coords[0]['lat']},{coords[0]['lon']}"
                             destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"

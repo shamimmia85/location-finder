@@ -12,7 +12,7 @@ from math import radians, cos, sin, asin, sqrt
 # ১. পেজ কনফিগারেশন
 st.set_page_config(page_title="Location Finder Dashboard", page_icon="📡", layout="wide")
 
-# ২. কাস্টম সিএসএস (এডিট আইকন বন্ধ ও ডার্ক মোড ফিক্স)
+# ২. কাস্টম সিএসএস (ডার্ক মোড কালার কন্ট্রাস্ট ফিক্স)
 st.markdown("""
     <style>
         /* এডিট আইকন, গিটহাব ও স্ট্রীমলিট মেকার টুলবার হাইড */
@@ -34,14 +34,17 @@ st.markdown("""
         .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
             margin-bottom: 0.3rem !important;
         }
+        
+        /* প্রোফাইল নাম ডার্ক মোড ফিক্স */
         .profile-name-text {
             font-size: 20px;
             font-weight: bold;
+            color: #ffffff !important;
             margin-bottom: 5px;
         }
         .role-badge {
             background-color: #007bff;
-            color: white;
+            color: #ffffff !important;
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 12px;
@@ -75,17 +78,17 @@ st.markdown("""
             color: #1a1a1a;
         }
         
-        /* ডার্ক ও লাইট উভয় মোডে এডমিন কন্টাক্ট বক্স ফিক্স */
+        /* ডার্ক ও লাইট উভয় মোডে এডমিন কন্টাক্ট বক্স ও টেক্সট কালার ফিক্স */
         .contact-box {
-            background-color: #2b303c !important;
+            background-color: #1e293b !important;
             color: #ffffff !important;
-            padding: 12px;
+            padding: 14px;
             border-radius: 8px;
             border-left: 5px solid #ff4b4b;
             margin-top: 15px;
             margin-bottom: 15px;
         }
-        .contact-box b, .contact-box span, .contact-box div {
+        .contact-box b, .contact-box span, .contact-box div, .contact-box p {
             color: #ffffff !important;
         }
         iframe {
@@ -198,7 +201,7 @@ if is_admin:
                         "role": new_role,
                         "name": new_name if new_name else new_userid
                     }
-                    save_users(st.session_state.users_db)  # স্থায়ীভাবে সেভ
+                    save_users(st.session_state.users_db)
                     st.success(f"✅ ইউজার '{new_userid}' সফলভাবে ক্রিয়েট হয়েছে!")
                 else:
                     st.warning("⚠️ এই ইউজার আইডিটি ইতিমধ্যে বিদ্যমান!")
@@ -215,7 +218,7 @@ with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
         if user_info["password"] == curr_pass:
             if new_pass and new_pass == conf_pass:
                 st.session_state.users_db[current_username]["password"] = new_pass
-                save_users(st.session_state.users_db)  # স্থায়ীভাবে সেভ
+                save_users(st.session_state.users_db)
                 st.success("✅ পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে!")
             else:
                 st.error("নতুন পাসওয়ার্ড দুটি মিলছে না!")
@@ -399,7 +402,6 @@ if df is not None:
 
         lac_val_in, cell_val_in, address_val_in = "", "", ""
         
-        # সরাসরি নিউমেরিক নামপ্যাড শো করার জন্য number_input ব্যবহার
         if selected_method == "Lac & Cell":
             i_col1, i_col2 = st.columns(2)
             with i_col1:

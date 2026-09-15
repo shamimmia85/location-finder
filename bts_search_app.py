@@ -25,25 +25,25 @@ def get_image_base64(image_path):
             return base64.b64encode(img_file.read()).decode()
     return None
 
-# ৩. কাস্টম সিএসএস (ডিজাইন ও প্রোফাইল ইমেজ স্টাইল)
+# ৩. কাস্টম সিএসএস (সাইডবার টগল ফিক্স ও ডিজাইন)
 st.markdown("""
     <style>
-        /* টপ হেডার বার সম্পূর্ণ হাইড করা */
-        header[data-testid="stHeader"] {
-            display: none !important;
-            height: 0px !important;
+        /* সাইডবার কলাপ্স বাটন (তীর চিহ্ন) সর্বদাই ভিজিবল রাখা */
+        [data-testid="stSidebarCollapsedControl"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 999999 !important;
+            top: 10px !important;
+            left: 10px !important;
+            background-color: #1f2937 !important;
+            border: 1px solid #374151 !important;
+            border-radius: 6px !important;
         }
-        
-        [data-testid="stAppHeaderToolbar"],
-        [data-testid="stHeaderNav"],
-        .stAppHeaderToolbar,
-        button[title="Edit this app"],
-        a[href*="github.com"],
-        header {
-            visibility: hidden !important;
-            display: none !important;
-            opacity: 0 !important;
-            height: 0px !important;
+
+        [data-testid="stSidebarCollapsedControl"] svg {
+            fill: #ffffff !important;
+            color: #ffffff !important;
         }
 
         [data-testid="stSidebar"] {
@@ -53,18 +53,15 @@ st.markdown("""
             padding-top: 0rem !important;
         }
 
-        [data-testid="stStatusWidget"],
-        footer,
-        #MainMenu,
-        .viewerBadge_container__1A5G2,
-        .styles_viewerBadge__1yB5_ {
+        /* অপ্রয়োজনীয় ওয়াটারমার্ক ও ফুটার হাইড করা */
+        #MainMenu, footer, [data-testid="stStatusWidget"], .viewerBadge_container__1A5G2 {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
         }
 
         .block-container {
-            padding-top: 1.5rem !important;
+            padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
@@ -232,10 +229,9 @@ is_admin = (current_username == "admin") or (user_role == "admin")
 display_name = user_info.get("name", current_username)
 display_role = "Admin" if is_admin else "General User"
 
-# এডমিনের ছবি চেক (শুধুমাত্র এডমিনের অ্যাকাউন্ট হলে ছবি দেখাবে)
+# এডমিনের ছবি চেক
 img_b64 = None
 if is_admin:
-    # এখানে ফাইল নেমটি চেক করা হয় (profile.jpg.jpg অথবা profile.jpg)
     img_b64 = get_image_base64("profile.jpg.jpg") or get_image_base64("profile.jpg")
 
 if is_admin and img_b64:
@@ -272,9 +268,32 @@ if is_admin:
         st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
         
         st.markdown("---")
+        
+        # --- রেজিস্টার্ড ইউজার তালিকা ও ডিলেট অপশন ---
+        st.markdown("**📜 রেজিস্টার্ড ইউজার তালিকা:**")
+        
+        for uid, udata in list(st.session_state.users_db.items()):
+            u_name = udata.get("name", uid)
+            u_role = udata.get("role", "User")
+            
+            col_u1, col_u2 = st.columns([3, 1])
+            with col_u1:
+                st.caption(f"👤 **{u_name}** (`{uid}`) - *{u_role}*")
+            with col_u2:
+                if uid != "admin":
+                    if st.button("🗑️", key=f"del_{uid}", help=f"Delete {uid}"):
+                        del st.session_state.users_db[uid]
+                        save_users(st.session_state.users_db)
+                        if uid in st.session_state.active_users:
+                            st.session_state.active_users.remove(uid)
+                        st.success(f"ইউজার '{uid}' মুছে ফেলা হয়েছে!")
+                        st.rerun()
+                else:
+                    st.caption("🔒 Main")
+
+        st.markdown("---")
         st.markdown("**➕ নতুন ইউজার তৈরি করুন:**")
         
-        # ইনপুট ফিল্ডের কি (State) নিয়ন্ত্রণ
         if "new_name_val" not in st.session_state: st.session_state.new_name_val = ""
         if "new_uid_val" not in st.session_state: st.session_state.new_uid_val = ""
         if "new_pass_val" not in st.session_state: st.session_state.new_pass_val = ""
@@ -295,7 +314,6 @@ if is_admin:
                     save_users(st.session_state.users_db)
                     st.session_state.users_db = load_users()
                     
-                    # ফর্ম ফিল্ড ক্লিয়ার করা
                     st.session_state.new_name_val = ""
                     st.session_state.new_uid_val = ""
                     st.session_state.new_pass_val = ""

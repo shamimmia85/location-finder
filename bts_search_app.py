@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. ছবি লোড করার ফাংশন (Base64 এ রূপান্তর)
+# ২. ছবি লোড করার ফাংশন
 def get_image_base64(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -66,7 +66,7 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* প্রোফাইল হেডার লেআউট (ছবি + নাম) */
+        /* প্রোফাইল হেডার লেআউট */
         .profile-container {
             display: flex;
             align-items: center;
@@ -187,13 +187,34 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
-# ------------------ ৫. লগইন পেজ ------------------
+# Remember password সম্পর্কিত session state
+if 'remember_username' not in st.session_state:
+    st.session_state['remember_username'] = ""
+if 'remember_password' not in st.session_state:
+    st.session_state['remember_password'] = ""
+
+# ------------------ ৫. আপডেটকৃত লগইন পেজ ------------------
 def login():
     st.title("🔒 Location Finder Dashboard - Login")
     col1, col2 = st.columns([1, 2])
     with col1:
-        username_input = st.text_input("Username").strip().lower()
-        password_input = st.text_input("Password", type="password").strip()
+        # Remembered data auto-fill
+        default_u = st.session_state.get('remember_username', '')
+        default_p = st.session_state.get('remember_password', '')
+        
+        username_input = st.text_input("Username", value=default_u).strip().lower()
+        password_input = st.text_input("Password", type="password", value=default_p).strip()
+        
+        # 🟢 নতুন যোগ করা অপশন (Remember & Forgot Password)
+        opt_col1, opt_col2 = st.columns([1, 1])
+        with opt_col1:
+            remember_me = st.checkbox("Remember password", value=bool(default_u))
+        with opt_col2:
+            forgot_click = st.popover("Forgot password?")
+            with forgot_click:
+                st.write("🔑 **পাসওয়ার্ড ভুলে গেছেন?**")
+                st.info("পাসওয়ার্ড রিসেট বা রিকভারির জন্য অ্যাডমিন এর সাথে যোগাযোগ করুন:\n\n📱 **01914594294**")
+
         submit = st.button("Log In", type="primary", use_container_width=True)
         
         if submit:
@@ -204,6 +225,15 @@ def login():
                 st.session_state['authenticated'] = True
                 st.session_state['username'] = username_input
                 st.session_state.active_users.add(username_input)
+                
+                # Remember password সেভ বা ক্লিয়ার করা
+                if remember_me:
+                    st.session_state['remember_username'] = username_input
+                    st.session_state['remember_password'] = password_input
+                else:
+                    st.session_state['remember_username'] = ""
+                    st.session_state['remember_password'] = ""
+                    
                 st.rerun()
             else:
                 st.error("❌ ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!")
@@ -456,7 +486,7 @@ map_theme = st.sidebar.selectbox(
     "ম্যাপের স্টাইল:",
     ["Google Hybrid", "OpenStreetMap", "CartoDB positron", "CartoDB dark_matter", "Esri WorldImagery"]
 )
-sector_radius = st.sidebar.slider("সেক্টর কভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
+sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
 def render_folium_map(center_lat, center_lon, zoom=18):

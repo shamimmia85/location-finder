@@ -235,6 +235,7 @@ display_role = "Admin" if is_admin else "General User"
 # এডমিনের ছবি চেক (শুধুমাত্র এডমিনের অ্যাকাউন্ট হলে ছবি দেখাবে)
 img_b64 = None
 if is_admin:
+    # এখানে ফাইল নেমটি চেক করা হয় (profile.jpg.jpg অথবা profile.jpg)
     img_b64 = get_image_base64("profile.jpg.jpg") or get_image_base64("profile.jpg")
 
 if is_admin and img_b64:
@@ -271,34 +272,9 @@ if is_admin:
         st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
         
         st.markdown("---")
-        
-        # --- রেজিস্টার্ড ইউজার লিস্ট এবং ডিলেট করার নতুন ফিচার ---
-        st.markdown("**📜 রেজিস্টার্ড ইউজার তালিকা:**")
-        
-        # ইউজারদের লিস্ট দেখানোর জন্য তৈরি লুপ
-        for uid, udata in list(st.session_state.users_db.items()):
-            u_name = udata.get("name", uid)
-            u_role = udata.get("role", "User")
-            
-            col_u1, col_u2 = st.columns([3, 1])
-            with col_u1:
-                st.caption(f"👤 **{u_name}** (`{uid}`) - *{u_role}*")
-            with col_u2:
-                # মূল 'admin' অ্যাকাউন্ট ডিলেট করা যাবে না
-                if uid != "admin":
-                    if st.button("🗑️", key=f"del_{uid}", help=f"Delete {uid}"):
-                        del st.session_state.users_db[uid]
-                        save_users(st.session_state.users_db)
-                        if uid in st.session_state.active_users:
-                            st.session_state.active_users.remove(uid)
-                        st.success(f"ইউজার '{uid}' মুছে ফেলা হয়েছে!")
-                        st.rerun()
-                else:
-                    st.caption("🔒 Main")
-
-        st.markdown("---")
         st.markdown("**➕ নতুন ইউজার তৈরি করুন:**")
         
+        # ইনপুট ফিল্ডের কি (State) নিয়ন্ত্রণ
         if "new_name_val" not in st.session_state: st.session_state.new_name_val = ""
         if "new_uid_val" not in st.session_state: st.session_state.new_uid_val = ""
         if "new_pass_val" not in st.session_state: st.session_state.new_pass_val = ""
@@ -319,6 +295,7 @@ if is_admin:
                     save_users(st.session_state.users_db)
                     st.session_state.users_db = load_users()
                     
+                    # ফর্ম ফিল্ড ক্লিয়ার করা
                     st.session_state.new_name_val = ""
                     st.session_state.new_uid_val = ""
                     st.session_state.new_pass_val = ""

@@ -25,7 +25,7 @@ def get_image_base64(image_path):
             return base64.b64encode(img_file.read()).decode()
     return None
 
-# ৩. কাস্টম সিএসএস
+# ৩. কাস্টম সিএসএস (সাইডবার টগল ফিক্স ও ডিজাইন)
 st.markdown("""
     <style>
         [data-testid="stSidebarCollapsedControl"] {
@@ -403,38 +403,62 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 অপারেটর লোগো (PNG/SVG) ও কালার ডেফিনেশন
-OPERATOR_LOGOS = {
-    "gp": "https://raw.githubusercontent.com/fawazahmed0/currency-api/1/icons/gp.png",
-    "grameen": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png",
-    "robi": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/512px-Robi_logo.svg.png",
-    "airtel": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Airtel_logo-01.png/512px-Airtel_logo-01.png",
-    "banglalink": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png",
-    "bl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png",
-    "teletalk": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/512px-Teletalk_logo.png"
-}
-
-def get_operator_info(provider_name):
+# 🟢 অপারেটর অনুযায়ী কাস্টম লোগো এবং কালার জেনারেটর (SVG/HTML ভিত্তিক যা ছবি না মিললেও শতভাগ কাজ করবে)
+def get_operator_badge(provider_name):
     prov = str(provider_name).lower().strip()
-    if 'gp' in prov or 'grameen' in prov:
-        color = '#007bff'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
+    
+    # Grameenphone
+    if any(x in prov for x in ['gp', 'grameen', 'grameenphone']):
+        color = '#00a3e0'
+        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
+            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#00a3e0" stroke-width="4"/>
+            <path d="M50 20 C30 20, 20 40, 20 50 C20 70, 35 80, 50 80 C65 80, 80 70, 80 50 Z" fill="#00a3e0"/>
+            <circle cx="50" cy="50" r="14" fill="#ffffff"/>
+        </svg>'''
+        
+    # Robi
     elif 'robi' in prov:
         color = '#e6121b'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/512px-Robi_logo.svg.png"
+        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
+            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e6121b" stroke-width="4"/>
+            <path d="M25 75 L50 25 L75 75 Z" fill="#e6121b"/>
+            <text x="50" y="68" font-size="22" font-weight="900" fill="#ffffff" text-anchor="middle">রবি</text>
+        </svg>'''
+        
+    # Airtel
     elif 'airtel' in prov:
         color = '#e6121b'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Airtel_logo-01.png/512px-Airtel_logo-01.png"
-    elif 'banglalink' in prov or 'bl' in prov:
-        color = '#ff7300'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png"
-    elif 'teletalk' in prov:
+        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
+            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e6121b" stroke-width="4"/>
+            <path d="M30 65 C30 35, 70 35, 70 65" fill="none" stroke="#e6121b" stroke-width="12" stroke-linecap="round"/>
+            <circle cx="50" cy="30" r="8" fill="#e6121b"/>
+        </svg>'''
+        
+    # Banglalink
+    elif any(x in prov for x in ['bl', 'banglalink']):
+        color = '#ff6600'
+        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
+            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#ff6600" stroke-width="4"/>
+            <rect x="25" y="25" width="50" height="50" rx="8" fill="#ff6600"/>
+            <path d="M35 35 L65 65 M65 35 L35 65" stroke="#ffffff" stroke-width="8"/>
+        </svg>'''
+        
+    # Teletalk
+    elif any(x in prov for x in ['teletalk', 'tl']):
         color = '#28a745'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/512px-Teletalk_logo.png"
+        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
+            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#28a745" stroke-width="4"/>
+            <text x="50" y="65" font-size="42" font-weight="900" fill="#28a745" text-anchor="middle">T</text>
+        </svg>'''
+        
     else:
-        color = '#6c757d'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
-    return color, logo_url
+        color = '#007bff'
+        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
+            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#007bff" stroke-width="4"/>
+            <circle cx="50" cy="50" r="25" fill="#007bff"/>
+        </svg>'''
+        
+    return color, badge_html
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
@@ -449,7 +473,6 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
         
     points.append([lat, lon])
     
-    # কেন্দ্রবিন্দু এবং শেষের পয়েন্ট গণনা (তীর চিহ্নের জন্য)
     target_rad = math.radians(azimuth)
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
@@ -499,7 +522,6 @@ if is_admin:
     st.sidebar.markdown("---")
 
 st.sidebar.header("⚙️ সেক্টর সেটিংস")
-# 🟢 সেক্টরের কভারেজ সাইজ বড় করতে ডিফল্ট ডিস্টেন্স ৬০০ মিটার করা হয়েছে
 sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
@@ -714,10 +736,9 @@ if df is not None:
                                     st.session_state['map_type'] = "Google Hybrid"
                                     st.rerun()
                         
-                        # 🟢 জুম আউট সামান্য বাড়ানো হয়েছে (zoom=16)
                         m = render_folium_map(lat_val, lon_val, zoom=16)
 
-                        color, logo_url = get_operator_info(row.get(provider_col, ''))
+                        color, badge_svg = get_operator_badge(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                         lbl_lat, lbl_lon = lat_val, lon_val
@@ -748,9 +769,9 @@ if df is not None:
                         except Exception:
                             pass
 
-                        # 🟢 অপারেটর মনোগ্রাম বড় মার্কার (42x42 px)
-                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:8px; padding:3px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 3px 8px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                        <img src="{logo_url}" style="width:36px; height:36px; object-fit:contain;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png'">
+                        # 🟢 অপারেটর ইনলাইন মনোগ্রাম মার্কার (যা ব্রাউজারে শতভাগ লোড হবে)
+                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
+                                        {badge_svg}
                                      </div>'''
                         folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
@@ -807,7 +828,7 @@ if df is not None:
 
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
-                                color, logo_url = get_operator_info(row.get(provider_col, ''))
+                                color, badge_svg = get_operator_badge(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
                                 all_bounds.append([p_lat, p_lon])
 
@@ -845,9 +866,9 @@ if df is not None:
                                 except Exception:
                                     pass
 
-                                # 🟢 অপারেটর মনোগ্রাম মার্কার (বড় আকারের)
-                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:8px; padding:3px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 3px 8px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                                <img src="{logo_url}" style="width:36px; height:36px; object-fit:contain;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png'">
+                                # 🟢 অপারেটর ইনলাইন মনোগ্রাম মার্কার
+                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
+                                                {badge_svg}
                                              </div>'''
                                 folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
@@ -879,7 +900,6 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
-                            # 🟢 প্যাডিং বাড়িয়ে জুম আউট অটোমেটিকালি একটু সহনশীল রাখা হয়েছে
                             if len(all_bounds) > 1:
                                 m.fit_bounds(all_bounds, padding=[80, 80])
 

@@ -403,46 +403,30 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 সমাধানকৃত অপারেটর রিয়েল লোগো জেনারেটর (হাই-রেজোলিউশন উইকিপিডিয়া সরাসরি ইমেজ লিংক)
-def get_operator_badge(provider_name):
+# 🟢 অপারেটর অনুযায়ী কাস্টম কালার ও নেম ট্যাগ (যা সবসময় নিখুঁতভাবে রেন্ডার হবে)
+def get_operator_info(provider_name):
     prov = str(provider_name).lower().strip()
     
-    # Grameenphone (জিপি)
     if any(x in prov for x in ['gp', 'grameen', 'grameenphone']):
         color = '#00a3e0'
-        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
-        text_alt = "GP"
-        
-    # Robi (রবি)
+        label = "GP"
     elif 'robi' in prov:
         color = '#e6121b'
-        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/512px-Robi_logo.svg.png"
-        text_alt = "Robi"
-        
-    # Airtel (এয়ারটেল)
+        label = "ROBI"
     elif 'airtel' in prov:
         color = '#e6121b'
-        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Airtel_logo-01.png/512px-Airtel_logo-01.png"
-        text_alt = "Airtel"
-        
-    # Banglalink (বাংলালিংক)
+        label = "AIRTEL"
     elif any(x in prov for x in ['bl', 'banglalink']):
         color = '#ff6600'
-        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png"
-        text_alt = "Banglalink"
-        
-    # Teletalk (টেলিটক)
+        label = "BL"
     elif any(x in prov for x in ['teletalk', 'tl']):
         color = '#28a745'
-        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/512px-Teletalk_logo.png"
-        text_alt = "Teletalk"
-        
+        label = "TALK"
     else:
         color = '#007bff'
-        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
-        text_alt = "BTS"
+        label = "BTS"
         
-    return color, img_url, text_alt
+    return color, label
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
@@ -722,7 +706,7 @@ if df is not None:
                         
                         m = render_folium_map(lat_val, lon_val, zoom=16)
 
-                        color, img_url, text_alt = get_operator_badge(row.get(provider_col, ''))
+                        color, op_label = get_operator_info(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                         lbl_lat, lbl_lon = lat_val, lon_val
@@ -753,11 +737,12 @@ if df is not None:
                         except Exception:
                             pass
 
-                        # 🟢 সমাধানকৃত লোগো মার্কার HTML (যা আসল ইমেজ সরাসরি রেন্ডার করবে)
-                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%); overflow:hidden;">
-                                        <img src="{img_url}" style="width:34px; height:34px; object-fit:contain;" alt="{text_alt}">
+                        # 🟢 টাওয়ার আইকন নির্দেশক পিন মার্কার (📡 Tower Icon HTML)
+                        tower_icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:48px; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
+                                        <div style="font-size:20px; line-height:1;">📡</div>
+                                        <div style="font-size:9px; font-weight:900; color:{color}; margin-top:1px;">{op_label}</div>
                                      </div>'''
-                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
+                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=tower_icon_html)).add_to(m)
 
                         folium.Marker(
                             [lbl_lat, lbl_lon],
@@ -812,7 +797,7 @@ if df is not None:
 
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
-                                color, img_url, text_alt = get_operator_badge(row.get(provider_col, ''))
+                                color, op_label = get_operator_info(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
                                 all_bounds.append([p_lat, p_lon])
 
@@ -850,11 +835,12 @@ if df is not None:
                                 except Exception:
                                     pass
 
-                                # 🟢 সমাধানকৃত লোগো মার্কার HTML
-                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%); overflow:hidden;">
-                                                <img src="{img_url}" style="width:34px; height:34px; object-fit:contain;" alt="{text_alt}">
+                                # 🟢 টাওয়ার আইকন নির্দেশক পিন মার্কার (📡 Tower Icon HTML)
+                                tower_icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:48px; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
+                                                <div style="font-size:20px; line-height:1;">📡</div>
+                                                <div style="font-size:9px; font-weight:900; color:{color}; margin-top:1px;">{op_label}</div>
                                              </div>'''
-                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
+                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=tower_icon_html)).add_to(m)
 
                                 folium.Marker(
                                     [lbl_lat, lbl_lon],

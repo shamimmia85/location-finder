@@ -403,7 +403,7 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 অপারেটর অনুযায়ী কালার ও মনোগ্রাম/লোগো সেট করার ফাংশন
+# অপারেটর লোগো ও কালার ফাংশন
 def get_operator_info(provider_name):
     prov = str(provider_name).lower()
     if 'gp' in prov or 'grameen' in prov:
@@ -436,12 +436,16 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
         
     points.append([lat, lon])
     
-    label_dist = distance_meters * 0.60
-    label_rad = math.radians(azimuth)
-    label_lat = lat + ((label_dist * math.cos(label_rad)) / 111320.0)
-    label_lon = lon + ((label_dist * math.sin(label_rad)) / (111320.0 * math.cos(math.radians(lat))))
+    # কেন্দ্রবিন্দু এবং শেষের পয়েন্ট গণনা (তীর চিহ্নের জন্য)
+    target_rad = math.radians(azimuth)
+    target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
+    target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    return points, label_lat, label_lon
+    label_dist = distance_meters * 0.60
+    label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
+    label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
+    
+    return points, label_lat, label_lon, target_lat, target_lon
 
 def clean_val(val):
     if pd.isna(val) or val is None or str(val).strip() == "":
@@ -682,7 +686,6 @@ if df is not None:
                         lat_val, lon_val = float(lat), float(lon)
                         st.markdown("---")
                         
-                        # 🟢 ম্যাপের হেডার ও ম্যাপের উপরে ডানে স্টাইল টগল বাটন
                         m_hdr_col, m_btn_col = st.columns([2, 1])
                         with m_hdr_col:
                             st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
@@ -705,17 +708,35 @@ if df is not None:
                         lbl_lat, lbl_lon = lat_val, lon_val
                         try:
                             azimuth_val = float(dir_val)
-                            wedge_points, lbl_lat, lbl_lon = create_sector_wedge(
+                            wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
                                 lat_val, lon_val, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                             )
+                            # সেক্টর ড্র
                             folium.Polygon(locations=wedge_points, color=color, weight=2, fill=True, fill_color=color, fill_opacity=0.35).add_to(m)
+                            
+                            # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
+                            folium.PolyLine(
+                                locations=[[lat_val, lon_val], [target_lat, target_lon]],
+                                color="#FFD700",
+                                weight=4,
+                                opacity=0.9
+                            ).add_to(m)
+                            folium.RegularPolygonMarker(
+                                location=[target_lat, target_lon],
+                                fill_color="#FFD700",
+                                color="#FFD700",
+                                number_of_sides=3,
+                                radius=10,
+                                rotation=azimuth_val - 90
+                            ).add_to(m)
+
                         except Exception:
                             pass
 
                         # 🟢 অপারেটর মনোগ্রাম মার্কার
                         if logo_url:
-                            icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
-                                            <img src="{logo_url}" style="width:22px; height:22px; object-fit:contain; border-radius:50%;">
+                            icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:6px; padding:2px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
+                                            <img src="{logo_url}" style="width:28px; height:28px; object-fit:contain;">
                                          </div>'''
                             folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
                         else:
@@ -747,7 +768,6 @@ if df is not None:
                         if len(records) > 0:
                             st.markdown("---")
                             
-                            # 🟢 ম্যাপের হেডার ও ম্যাপের উপরে ডানে স্টাইল টগল বাটন
                             m_hdr_col, m_btn_col = st.columns([2, 1])
                             with m_hdr_col:
                                 st.subheader("🗺️ লোকেশন ও সেক্টর ডিরেকশন ম্যাপ")
@@ -788,17 +808,35 @@ if df is not None:
 
                                 try:
                                     azimuth_val = float(m_dir)
-                                    wedge_points, lbl_lat, lbl_lon = create_sector_wedge(
+                                    wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
                                         p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                                     )
+                                    # সেক্টর ড্র
                                     folium.Polygon(locations=wedge_points, color=color, weight=2, fill=True, fill_color=color, fill_opacity=0.35).add_to(m)
+                                    
+                                    # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
+                                    folium.PolyLine(
+                                        locations=[[p_lat, p_lon], [target_lat, target_lon]],
+                                        color="#FFD700",
+                                        weight=4,
+                                        opacity=0.9
+                                    ).add_to(m)
+                                    folium.RegularPolygonMarker(
+                                        location=[target_lat, target_lon],
+                                        fill_color="#FFD700",
+                                        color="#FFD700",
+                                        number_of_sides=3,
+                                        radius=10,
+                                        rotation=azimuth_val - 90
+                                    ).add_to(m)
+
                                 except Exception:
                                     pass
 
                                 # 🟢 অপারেটর মনোগ্রাম মার্কার
                                 if logo_url:
-                                    icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
-                                                    <img src="{logo_url}" style="width:22px; height:22px; object-fit:contain; border-radius:50%;">
+                                    icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:6px; padding:2px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
+                                                    <img src="{logo_url}" style="width:28px; height:28px; object-fit:contain;">
                                                  </div>'''
                                     folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
                                 else:

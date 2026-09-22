@@ -403,62 +403,46 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 অপারেটর অনুযায়ী কাস্টম লোগো এবং কালার জেনারেটর (SVG/HTML ভিত্তিক যা ছবি না মিললেও শতভাগ কাজ করবে)
+# 🟢 সমাধানকৃত অপারেটর রিয়েল লোগো জেনারেটর (হাই-রেজোলিউশন উইকিপিডিয়া সরাসরি ইমেজ লিংক)
 def get_operator_badge(provider_name):
     prov = str(provider_name).lower().strip()
     
-    # Grameenphone
+    # Grameenphone (জিপি)
     if any(x in prov for x in ['gp', 'grameen', 'grameenphone']):
         color = '#00a3e0'
-        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
-            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#00a3e0" stroke-width="4"/>
-            <path d="M50 20 C30 20, 20 40, 20 50 C20 70, 35 80, 50 80 C65 80, 80 70, 80 50 Z" fill="#00a3e0"/>
-            <circle cx="50" cy="50" r="14" fill="#ffffff"/>
-        </svg>'''
+        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
+        text_alt = "GP"
         
-    # Robi
+    # Robi (রবি)
     elif 'robi' in prov:
         color = '#e6121b'
-        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
-            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e6121b" stroke-width="4"/>
-            <path d="M25 75 L50 25 L75 75 Z" fill="#e6121b"/>
-            <text x="50" y="68" font-size="22" font-weight="900" fill="#ffffff" text-anchor="middle">রবি</text>
-        </svg>'''
+        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/512px-Robi_logo.svg.png"
+        text_alt = "Robi"
         
-    # Airtel
+    # Airtel (এয়ারটেল)
     elif 'airtel' in prov:
         color = '#e6121b'
-        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
-            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e6121b" stroke-width="4"/>
-            <path d="M30 65 C30 35, 70 35, 70 65" fill="none" stroke="#e6121b" stroke-width="12" stroke-linecap="round"/>
-            <circle cx="50" cy="30" r="8" fill="#e6121b"/>
-        </svg>'''
+        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Airtel_logo-01.png/512px-Airtel_logo-01.png"
+        text_alt = "Airtel"
         
-    # Banglalink
+    # Banglalink (বাংলালিংক)
     elif any(x in prov for x in ['bl', 'banglalink']):
         color = '#ff6600'
-        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
-            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#ff6600" stroke-width="4"/>
-            <rect x="25" y="25" width="50" height="50" rx="8" fill="#ff6600"/>
-            <path d="M35 35 L65 65 M65 35 L35 65" stroke="#ffffff" stroke-width="8"/>
-        </svg>'''
+        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png"
+        text_alt = "Banglalink"
         
-    # Teletalk
+    # Teletalk (টেলিটক)
     elif any(x in prov for x in ['teletalk', 'tl']):
         color = '#28a745'
-        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
-            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#28a745" stroke-width="4"/>
-            <text x="50" y="65" font-size="42" font-weight="900" fill="#28a745" text-anchor="middle">T</text>
-        </svg>'''
+        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/512px-Teletalk_logo.png"
+        text_alt = "Teletalk"
         
     else:
         color = '#007bff'
-        badge_html = '''<svg viewBox="0 0 100 100" width="34" height="34">
-            <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#007bff" stroke-width="4"/>
-            <circle cx="50" cy="50" r="25" fill="#007bff"/>
-        </svg>'''
+        img_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
+        text_alt = "BTS"
         
-    return color, badge_html
+    return color, img_url, text_alt
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
@@ -738,7 +722,7 @@ if df is not None:
                         
                         m = render_folium_map(lat_val, lon_val, zoom=16)
 
-                        color, badge_svg = get_operator_badge(row.get(provider_col, ''))
+                        color, img_url, text_alt = get_operator_badge(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                         lbl_lat, lbl_lon = lat_val, lon_val
@@ -769,9 +753,9 @@ if df is not None:
                         except Exception:
                             pass
 
-                        # 🟢 অপারেটর ইনলাইন মনোগ্রাম মার্কার (যা ব্রাউজারে শতভাগ লোড হবে)
-                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                        {badge_svg}
+                        # 🟢 সমাধানকৃত লোগো মার্কার HTML (যা আসল ইমেজ সরাসরি রেন্ডার করবে)
+                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%); overflow:hidden;">
+                                        <img src="{img_url}" style="width:34px; height:34px; object-fit:contain;" alt="{text_alt}">
                                      </div>'''
                         folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
@@ -828,7 +812,7 @@ if df is not None:
 
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
-                                color, badge_svg = get_operator_badge(row.get(provider_col, ''))
+                                color, img_url, text_alt = get_operator_badge(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
                                 all_bounds.append([p_lat, p_lon])
 
@@ -866,9 +850,9 @@ if df is not None:
                                 except Exception:
                                     pass
 
-                                # 🟢 অপারেটর ইনলাইন মনোগ্রাম মার্কার
-                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                                {badge_svg}
+                                # 🟢 সমাধানকৃত লোগো মার্কার HTML
+                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%); overflow:hidden;">
+                                                <img src="{img_url}" style="width:34px; height:34px; object-fit:contain;" alt="{text_alt}">
                                              </div>'''
                                 folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
 

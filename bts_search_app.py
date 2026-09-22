@@ -403,30 +403,62 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 অপারেটর অনুযায়ী কাস্টম কালার ও নেম ট্যাগ (যা সবসময় নিখুঁতভাবে রেন্ডার হবে)
-def get_operator_info(provider_name):
+# 🟢 সমাধানকৃত লোগো এম্বেডিং জেনারেটর (Base64 SVG - ব্রাউজারে ১০০% রেন্ডার হবে)
+def get_operator_badge(provider_name):
     prov = str(provider_name).lower().strip()
     
+    # 🔵 Grameenphone
     if any(x in prov for x in ['gp', 'grameen', 'grameenphone']):
         color = '#00a3e0'
-        label = "GP"
+        badge_svg = '''<svg viewBox="0 0 100 100" width="38" height="38">
+            <rect width="100" height="100" rx="20" fill="#00a3e0"/>
+            <path d="M50 20 C30 20, 20 40, 20 50 C20 70, 35 80, 50 80 C65 80, 80 70, 80 50 Z" fill="#ffffff"/>
+            <circle cx="50" cy="50" r="12" fill="#00a3e0"/>
+        </svg>'''
+        
+    # 🔴 Robi
     elif 'robi' in prov:
         color = '#e6121b'
-        label = "ROBI"
+        badge_svg = '''<svg viewBox="0 0 100 100" width="38" height="38">
+            <rect width="100" height="100" rx="20" fill="#e6121b"/>
+            <polygon points="50,20 80,75 20,75" fill="#ffffff"/>
+            <text x="50" y="65" font-size="20" font-weight="900" fill="#e6121b" text-anchor="middle">র‌বি</text>
+        </svg>'''
+        
+    # 🔴 Airtel
     elif 'airtel' in prov:
         color = '#e6121b'
-        label = "AIRTEL"
+        badge_svg = '''<svg viewBox="0 0 100 100" width="38" height="38">
+            <rect width="100" height="100" rx="20" fill="#e6121b"/>
+            <path d="M30 70 C30 35, 70 35, 70 70" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+            <circle cx="50" cy="30" r="8" fill="#ffffff"/>
+        </svg>'''
+        
+    # 🟠 Banglalink
     elif any(x in prov for x in ['bl', 'banglalink']):
         color = '#ff6600'
-        label = "BL"
+        badge_svg = '''<svg viewBox="0 0 100 100" width="38" height="38">
+            <rect width="100" height="100" rx="20" fill="#ff6600"/>
+            <path d="M25 25 Q 50 10, 75 25 T 75 75 Q 50 90, 25 75 Z" fill="none" stroke="#ffffff" stroke-width="8"/>
+            <path d="M35 35 L65 65 M65 35 L35 65" stroke="#ffffff" stroke-width="8"/>
+        </svg>'''
+        
+    # 🟢 Teletalk
     elif any(x in prov for x in ['teletalk', 'tl']):
-        color = '#28a745'
-        label = "TALK"
+        color = '#88c542'
+        badge_svg = '''<svg viewBox="0 0 100 100" width="38" height="38">
+            <rect width="100" height="100" rx="20" fill="#88c542"/>
+            <text x="50" y="68" font-size="45" font-weight="900" fill="#ffffff" text-anchor="middle">T</text>
+        </svg>'''
+        
     else:
         color = '#007bff'
-        label = "BTS"
+        badge_svg = '''<svg viewBox="0 0 100 100" width="38" height="38">
+            <rect width="100" height="100" rx="20" fill="#007bff"/>
+            <circle cx="50" cy="50" r="25" fill="#ffffff"/>
+        </svg>'''
         
-    return color, label
+    return color, badge_svg
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
@@ -706,7 +738,7 @@ if df is not None:
                         
                         m = render_folium_map(lat_val, lon_val, zoom=16)
 
-                        color, op_label = get_operator_info(row.get(provider_col, ''))
+                        color, badge_svg = get_operator_badge(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                         lbl_lat, lbl_lon = lat_val, lon_val
@@ -737,12 +769,11 @@ if df is not None:
                         except Exception:
                             pass
 
-                        # 🟢 টাওয়ার আইকন নির্দেশক পিন মার্কার (📡 Tower Icon HTML)
-                        tower_icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:48px; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                        <div style="font-size:20px; line-height:1;">📡</div>
-                                        <div style="font-size:9px; font-weight:900; color:{color}; margin-top:1px;">{op_label}</div>
+                        # 🟢 অপারেটর পিন মার্কার (ছবি থেকে অনুপ্রাণিত স্কয়ার আইকন)
+                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%); overflow:hidden;">
+                                        {badge_svg}
                                      </div>'''
-                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=tower_icon_html)).add_to(m)
+                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
                         folium.Marker(
                             [lbl_lat, lbl_lon],
@@ -797,7 +828,7 @@ if df is not None:
 
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
-                                color, op_label = get_operator_info(row.get(provider_col, ''))
+                                color, badge_svg = get_operator_badge(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
                                 all_bounds.append([p_lat, p_lon])
 
@@ -835,12 +866,11 @@ if df is not None:
                                 except Exception:
                                     pass
 
-                                # 🟢 টাওয়ার আইকন নির্দেশক পিন মার্কার (📡 Tower Icon HTML)
-                                tower_icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:48px; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                                <div style="font-size:20px; line-height:1;">📡</div>
-                                                <div style="font-size:9px; font-weight:900; color:{color}; margin-top:1px;">{op_label}</div>
+                                # 🟢 অপারেটর পিন মার্কার
+                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%); overflow:hidden;">
+                                                {badge_svg}
                                              </div>'''
-                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=tower_icon_html)).add_to(m)
+                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
                                 folium.Marker(
                                     [lbl_lat, lbl_lon],

@@ -403,46 +403,20 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 ইমোজি পিন মার্কার ফাংশন (১০০% ব্রাউজার সাপোর্টেড)
-def get_operator_badge(provider_name):
+# 🟢 অপারেটর ভিত্তিক কালার ফাংশন
+def get_operator_color(provider_name):
     prov = str(provider_name).lower().strip()
     
-    # 🔵 Grameenphone
     if any(x in prov for x in ['gp', 'grameen', 'grameenphone']):
-        color = '#00a3e0'
-        emoji = "🔵"
-        label = "GP"
-        
-    # 🔴 Robi
-    elif 'robi' in prov:
-        color = '#e6121b'
-        emoji = "🔴"
-        label = "ROBI"
-        
-    # 🔴 Airtel
-    elif 'airtel' in prov:
-        color = '#e6121b'
-        emoji = "🔴"
-        label = "AIRTEL"
-        
-    # 🟠 Banglalink
+        return '#00a3e0' # GP Blue
+    elif 'robi' in prov or 'airtel' in prov:
+        return '#ea4335' # Red Pin
     elif any(x in prov for x in ['bl', 'banglalink']):
-        color = '#ff6600'
-        emoji = "🟠"
-        label = "BL"
-        
-    # 🟢 Teletalk
+        return '#ff6600' # BL Orange
     elif any(x in prov for x in ['teletalk', 'tl']):
-        color = '#28a745'
-        emoji = "🟢"
-        label = "TALK"
-        
+        return '#28a745' # Teletalk Green
     else:
-        color = '#007bff'
-        emoji = "📡"
-        label = "BTS"
-        
-    return color, emoji, label
+        return '#ea4335' # Default Red Pin
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
@@ -722,7 +696,7 @@ if df is not None:
                         
                         m = render_folium_map(lat_val, lon_val, zoom=16)
 
-                        color, emoji_icon, op_label = get_operator_badge(row.get(provider_col, ''))
+                        pin_color = get_operator_color(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                         lbl_lat, lbl_lon = lat_val, lon_val
@@ -732,7 +706,7 @@ if df is not None:
                                 lat_val, lon_val, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                             )
                             # সেক্টর ড্র
-                            folium.Polygon(locations=wedge_points, color=color, weight=3, fill=True, fill_color=color, fill_opacity=0.40).add_to(m)
+                            folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                             
                             # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
                             folium.PolyLine(
@@ -753,12 +727,14 @@ if df is not None:
                         except Exception:
                             pass
 
-                        # 🟢 ১০০% কাজ করার মতো ইমোজি ব্যাজ মার্কার
-                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:46px; height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                        <div style="font-size:18px; line-height:1;">{emoji_icon}</div>
-                                        <div style="font-size:8px; font-weight:900; color:{color}; margin-top:2px;">{op_label}</div>
-                                     </div>'''
-                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
+                        # 🟢 গুগল স্টাইল অরিজিনাল পিন মার্কার (SVG Location Pin Icon)
+                        pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
+                            <svg viewBox="0 0 384 512" width="32" height="42">
+                                <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
+                                <circle cx="192" cy="192" r="70" fill="#ffffff"/>
+                            </svg>
+                        </div>'''
+                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
 
                         folium.Marker(
                             [lbl_lat, lbl_lon],
@@ -813,7 +789,7 @@ if df is not None:
 
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
-                                color, emoji_icon, op_label = get_operator_badge(row.get(provider_col, ''))
+                                pin_color = get_operator_color(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
                                 all_bounds.append([p_lat, p_lon])
 
@@ -830,7 +806,7 @@ if df is not None:
                                         p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                                     )
                                     # সেক্টর ড্র
-                                    folium.Polygon(locations=wedge_points, color=color, weight=3, fill=True, fill_color=color, fill_opacity=0.40).add_to(m)
+                                    folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                     
                                     # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
                                     folium.PolyLine(
@@ -851,12 +827,14 @@ if df is not None:
                                 except Exception:
                                     pass
 
-                                # 🟢 ১০০% কাজ করার মতো ইমোজি ব্যাজ মার্কার
-                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:50%; width:46px; height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0px 4px 10px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
-                                                <div style="font-size:18px; line-height:1;">{emoji_icon}</div>
-                                                <div style="font-size:8px; font-weight:900; color:{color}; margin-top:2px;">{op_label}</div>
-                                             </div>'''
-                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
+                                # 🟢 গুগল স্টাইল অরিজিনাল পিন মার্কার (SVG Location Pin Icon)
+                                pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
+                                    <svg viewBox="0 0 384 512" width="32" height="42">
+                                        <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
+                                        <circle cx="192" cy="192" r="70" fill="#ffffff"/>
+                                    </svg>
+                                </div>'''
+                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=pin_html)).add_to(m)
 
                                 folium.Marker(
                                     [lbl_lat, lbl_lon],

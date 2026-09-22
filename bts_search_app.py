@@ -18,17 +18,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ২. ছবি লোড করার ফাংশন
+# ২. ছবি ও লোগো লোড করার ফাংশন
 def get_image_base64(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     return None
 
-# ৩. কাস্টম সিএসএস (সাইডবার টগল ফিক্স ও ডিজাইন)
+# ৩. কাস্টম সিএসএস
 st.markdown("""
     <style>
-        /* সাইডবার কলাপ্স বাটন (তীর চিহ্ন) সর্বদাই ভিজিবল রাখা */
         [data-testid="stSidebarCollapsedControl"] {
             display: block !important;
             visibility: visible !important;
@@ -53,7 +52,6 @@ st.markdown("""
             padding-top: 0rem !important;
         }
 
-        /* অপ্রয়োজনীয় ওয়াটারমার্ক ও ফুটার হাইড করা */
         #MainMenu, footer, [data-testid="stStatusWidget"], .viewerBadge_container__1A5G2 {
             display: none !important;
             visibility: hidden !important;
@@ -66,7 +64,6 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* প্রোফাইল হেডার লেআউট */
         .profile-container {
             display: flex;
             align-items: center;
@@ -187,25 +184,25 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state['username'] = None
 
-# Remember password সম্পর্কিত session state
 if 'remember_username' not in st.session_state:
     st.session_state['remember_username'] = ""
 if 'remember_password' not in st.session_state:
     st.session_state['remember_password'] = ""
 
-# ------------------ ৫. আপডেটকৃত লগইন পেজ ------------------
+if 'map_type' not in st.session_state:
+    st.session_state['map_type'] = "OpenStreetMap"
+
+# ------------------ ৫. লগইন পেজ ------------------
 def login():
     st.title("🔒 Location Finder Dashboard - Login")
     col1, col2 = st.columns([1, 2])
     with col1:
-        # Remembered data auto-fill
         default_u = st.session_state.get('remember_username', '')
         default_p = st.session_state.get('remember_password', '')
         
         username_input = st.text_input("Username", value=default_u).strip().lower()
         password_input = st.text_input("Password", type="password", value=default_p).strip()
         
-        # 🟢 নতুন যোগ করা অপশন (Remember & Forgot Password)
         opt_col1, opt_col2 = st.columns([1, 1])
         with opt_col1:
             remember_me = st.checkbox("Remember password", value=bool(default_u))
@@ -226,7 +223,6 @@ def login():
                 st.session_state['username'] = username_input
                 st.session_state.active_users.add(username_input)
                 
-                # Remember password সেভ বা ক্লিয়ার করা
                 if remember_me:
                     st.session_state['remember_username'] = username_input
                     st.session_state['remember_password'] = password_input
@@ -259,7 +255,6 @@ is_admin = (current_username == "admin") or (user_role == "admin")
 display_name = user_info.get("name", current_username)
 display_role = "Admin" if is_admin else "General User"
 
-# এডমিনের ছবি চেক
 img_b64 = None
 if is_admin:
     img_b64 = get_image_base64("profile.jpg.jpg") or get_image_base64("profile.jpg")
@@ -298,8 +293,6 @@ if is_admin:
         st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
         
         st.markdown("---")
-        
-        # --- রেজিস্টার্ড ইউজার তালিকা ও ডিলেট অপশন ---
         st.markdown("**📜 রেজিস্টার্ড ইউজার তালিকা:**")
         
         for uid, udata in list(st.session_state.users_db.items()):
@@ -410,18 +403,25 @@ def load_data_optimized(file_or_path):
         
     return df
 
-def get_operator_color(provider_name):
+# 🟢 অপারেটর অনুযায়ী কালার ও মনোগ্রাম/লোগো সেট করার ফাংশন
+def get_operator_info(provider_name):
     prov = str(provider_name).lower()
     if 'gp' in prov or 'grameen' in prov:
-        return '#007bff'
+        color = '#007bff'
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/1024px-Grameenphone_Logo.svg.png"
     elif 'robi' in prov or 'airtel' in prov:
-        return '#e6121b'
+        color = '#e6121b'
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/1200px-Robi_logo.svg.png"
     elif 'banglalink' in prov or 'bl' in prov:
-        return '#ff7300'
+        color = '#ff7300'
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/1200px-Banglalink_logo.svg.png"
     elif 'teletalk' in prov:
-        return '#28a745'
+        color = '#28a745'
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/600px-Teletalk_logo.png"
     else:
-        return '#6c757d'
+        color = '#6c757d'
+        logo_url = None
+    return color, logo_url
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
     points = [[lat, lon]]
@@ -481,16 +481,12 @@ if is_admin:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
     st.sidebar.markdown("---")
 
-st.sidebar.header("🗺️ ম্যাপ ও সেক্টর সেটিংস")
-map_theme = st.sidebar.selectbox(
-    "ম্যাপের স্টাইল:",
-    ["Google Hybrid", "OpenStreetMap", "CartoDB positron", "CartoDB dark_matter", "Esri WorldImagery"]
-)
+st.sidebar.header("⚙️ সেক্টর সেটিংস")
 sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
 def render_folium_map(center_lat, center_lon, zoom=18):
-    if map_theme == "Google Hybrid":
+    if st.session_state['map_type'] == "Google Hybrid":
         m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
         folium.TileLayer(
             tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
@@ -501,7 +497,7 @@ def render_folium_map(center_lat, center_lon, zoom=18):
             control=True
         ).add_to(m)
     else:
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=map_theme)
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles="OpenStreetMap")
     Fullscreen(position='topright').add_to(m)
     return m
 
@@ -685,11 +681,25 @@ if df is not None:
                     try:
                         lat_val, lon_val = float(lat), float(lon)
                         st.markdown("---")
-                        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+                        
+                        # 🟢 ম্যাপের হেডার ও ম্যাপের উপরে ডানে স্টাইল টগল বাটন
+                        m_hdr_col, m_btn_col = st.columns([2, 1])
+                        with m_hdr_col:
+                            st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+                        with m_btn_col:
+                            btn_c1, btn_c2 = st.columns(2)
+                            with btn_c1:
+                                if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True):
+                                    st.session_state['map_type'] = "OpenStreetMap"
+                                    st.rerun()
+                            with btn_c2:
+                                if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True):
+                                    st.session_state['map_type'] = "Google Hybrid"
+                                    st.rerun()
                         
                         m = render_folium_map(lat_val, lon_val, zoom=18)
 
-                        color = get_operator_color(row.get(provider_col, ''))
+                        color, logo_url = get_operator_info(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                         lbl_lat, lbl_lon = lat_val, lon_val
@@ -702,7 +712,15 @@ if df is not None:
                         except Exception:
                             pass
 
-                        folium.Marker([lat_val, lon_val], icon=folium.Icon(color="red", icon="signal", prefix="fa")).add_to(m)
+                        # 🟢 অপারেটর মনোগ্রাম মার্কার
+                        if logo_url:
+                            icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
+                                            <img src="{logo_url}" style="width:22px; height:22px; object-fit:contain; border-radius:50%;">
+                                         </div>'''
+                            folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
+                        else:
+                            folium.Marker([lat_val, lon_val], icon=folium.Icon(color="red", icon="signal", prefix="fa")).add_to(m)
+
                         folium.Marker(
                             [lbl_lat, lbl_lon],
                             icon=folium.DivIcon(
@@ -728,8 +746,22 @@ if df is not None:
                         
                         if len(records) > 0:
                             st.markdown("---")
-                            st.subheader("🗺️ লোকেশন ও সেক্টর ডিরেকশন ম্যাপ")
                             
+                            # 🟢 ম্যাপের হেডার ও ম্যাপের উপরে ডানে স্টাইল টগল বাটন
+                            m_hdr_col, m_btn_col = st.columns([2, 1])
+                            with m_hdr_col:
+                                st.subheader("🗺️ লোকেশন ও সেক্টর ডিরেকশন ম্যাপ")
+                            with m_btn_col:
+                                btn_c1, btn_c2 = st.columns(2)
+                                with btn_c1:
+                                    if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="m_btn_osm"):
+                                        st.session_state['map_type'] = "OpenStreetMap"
+                                        st.rerun()
+                                with btn_c2:
+                                    if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="m_btn_gh"):
+                                        st.session_state['map_type'] = "Google Hybrid"
+                                        st.rerun()
+
                             def haversine(lat1, lon1, lat2, lon2):
                                 R = 6371.0
                                 dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
@@ -743,7 +775,7 @@ if df is not None:
 
                             for row in records:
                                 p_lat, p_lon = row[lat_col], row[lon_col]
-                                color = get_operator_color(row.get(provider_col, ''))
+                                color, logo_url = get_operator_info(row.get(provider_col, ''))
                                 coords.append({'lat': p_lat, 'lon': p_lon})
                                 all_bounds.append([p_lat, p_lon])
 
@@ -763,7 +795,15 @@ if df is not None:
                                 except Exception:
                                     pass
 
-                                folium.CircleMarker(location=[p_lat, p_lon], radius=7, color="#d9534f", fill=True, fill_color="#d9534f", fill_opacity=0.9).add_to(m)
+                                # 🟢 অপারেটর মনোগ্রাম মার্কার
+                                if logo_url:
+                                    icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
+                                                    <img src="{logo_url}" style="width:22px; height:22px; object-fit:contain; border-radius:50%;">
+                                                 </div>'''
+                                    folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
+                                else:
+                                    folium.CircleMarker(location=[p_lat, p_lon], radius=7, color="#d9534f", fill=True, fill_color="#d9534f", fill_opacity=0.9).add_to(m)
+
                                 folium.Marker(
                                     [lbl_lat, lbl_lon],
                                     icon=folium.DivIcon(

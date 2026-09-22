@@ -403,27 +403,40 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# অপারেটর লোগো ও কালার ফাংশন
+# 🟢 অপারেটর লোগো (PNG/SVG) ও কালার ডেফিনেশন
+OPERATOR_LOGOS = {
+    "gp": "https://raw.githubusercontent.com/fawazahmed0/currency-api/1/icons/gp.png",
+    "grameen": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png",
+    "robi": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/512px-Robi_logo.svg.png",
+    "airtel": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Airtel_logo-01.png/512px-Airtel_logo-01.png",
+    "banglalink": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png",
+    "bl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png",
+    "teletalk": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/512px-Teletalk_logo.png"
+}
+
 def get_operator_info(provider_name):
-    prov = str(provider_name).lower()
+    prov = str(provider_name).lower().strip()
     if 'gp' in prov or 'grameen' in prov:
         color = '#007bff'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/1024px-Grameenphone_Logo.svg.png"
-    elif 'robi' in prov or 'airtel' in prov:
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
+    elif 'robi' in prov:
         color = '#e6121b'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/1200px-Robi_logo.svg.png"
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Robi_logo.svg/512px-Robi_logo.svg.png"
+    elif 'airtel' in prov:
+        color = '#e6121b'
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Airtel_logo-01.png/512px-Airtel_logo-01.png"
     elif 'banglalink' in prov or 'bl' in prov:
         color = '#ff7300'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/1200px-Banglalink_logo.svg.png"
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Banglalink_logo.svg/512px-Banglalink_logo.svg.png"
     elif 'teletalk' in prov:
         color = '#28a745'
-        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/600px-Teletalk_logo.png"
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Teletalk_logo.png/512px-Teletalk_logo.png"
     else:
         color = '#6c757d'
-        logo_url = None
+        logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png"
     return color, logo_url
 
-def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
+def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
     start_angle = azimuth - (beamwidth / 2)
     end_angle = azimuth + (beamwidth / 2)
@@ -441,7 +454,7 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=350, beamwidth=60):
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    label_dist = distance_meters * 0.60
+    label_dist = distance_meters * 0.55
     label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
@@ -486,10 +499,11 @@ if is_admin:
     st.sidebar.markdown("---")
 
 st.sidebar.header("⚙️ সেক্টর সেটিংস")
-sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1000, value=350, step=50)
+# 🟢 সেক্টরের কভারেজ সাইজ বড় করতে ডিফল্ট ডিস্টেন্স ৬০০ মিটার করা হয়েছে
+sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-def render_folium_map(center_lat, center_lon, zoom=18):
+def render_folium_map(center_lat, center_lon, zoom=16):
     if st.session_state['map_type'] == "Google Hybrid":
         m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
         folium.TileLayer(
@@ -700,7 +714,8 @@ if df is not None:
                                     st.session_state['map_type'] = "Google Hybrid"
                                     st.rerun()
                         
-                        m = render_folium_map(lat_val, lon_val, zoom=18)
+                        # 🟢 জুম আউট সামান্য বাড়ানো হয়েছে (zoom=16)
+                        m = render_folium_map(lat_val, lon_val, zoom=16)
 
                         color, logo_url = get_operator_info(row.get(provider_col, ''))
                         label_text = f"{lac_val}|{cell_val}|{dir_val}°"
@@ -712,7 +727,7 @@ if df is not None:
                                 lat_val, lon_val, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                             )
                             # সেক্টর ড্র
-                            folium.Polygon(locations=wedge_points, color=color, weight=2, fill=True, fill_color=color, fill_opacity=0.35).add_to(m)
+                            folium.Polygon(locations=wedge_points, color=color, weight=3, fill=True, fill_color=color, fill_opacity=0.40).add_to(m)
                             
                             # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
                             folium.PolyLine(
@@ -726,21 +741,18 @@ if df is not None:
                                 fill_color="#FFD700",
                                 color="#FFD700",
                                 number_of_sides=3,
-                                radius=10,
+                                radius=12,
                                 rotation=azimuth_val - 90
                             ).add_to(m)
 
                         except Exception:
                             pass
 
-                        # 🟢 অপারেটর মনোগ্রাম মার্কার
-                        if logo_url:
-                            icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:6px; padding:2px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
-                                            <img src="{logo_url}" style="width:28px; height:28px; object-fit:contain;">
-                                         </div>'''
-                            folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
-                        else:
-                            folium.Marker([lat_val, lon_val], icon=folium.Icon(color="red", icon="signal", prefix="fa")).add_to(m)
+                        # 🟢 অপারেটর মনোগ্রাম বড় মার্কার (42x42 px)
+                        icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:8px; padding:3px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 3px 8px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
+                                        <img src="{logo_url}" style="width:36px; height:36px; object-fit:contain;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png'">
+                                     </div>'''
+                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
                         folium.Marker(
                             [lbl_lat, lbl_lon],
@@ -788,7 +800,7 @@ if df is not None:
                                 a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
                                 return R * 2 * asin(sqrt(a))
 
-                            m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=18)
+                            m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=14)
 
                             coords = []
                             all_bounds = []
@@ -812,7 +824,7 @@ if df is not None:
                                         p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                                     )
                                     # সেক্টর ড্র
-                                    folium.Polygon(locations=wedge_points, color=color, weight=2, fill=True, fill_color=color, fill_opacity=0.35).add_to(m)
+                                    folium.Polygon(locations=wedge_points, color=color, weight=3, fill=True, fill_color=color, fill_opacity=0.40).add_to(m)
                                     
                                     # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
                                     folium.PolyLine(
@@ -826,21 +838,18 @@ if df is not None:
                                         fill_color="#FFD700",
                                         color="#FFD700",
                                         number_of_sides=3,
-                                        radius=10,
+                                        radius=12,
                                         rotation=azimuth_val - 90
                                     ).add_to(m)
 
                                 except Exception:
                                     pass
 
-                                # 🟢 অপারেটর মনোগ্রাম মার্কার
-                                if logo_url:
-                                    icon_html = f'''<div style="background:#fff; border:2px solid {color}; border-radius:6px; padding:2px; width:34px; height:34px; display:flex; align-items:center; justify-content:center; box-shadow:0px 2px 6px rgba(0,0,0,0.5); transform:translate(-50%, -50%);">
-                                                    <img src="{logo_url}" style="width:28px; height:28px; object-fit:contain;">
-                                                 </div>'''
-                                    folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
-                                else:
-                                    folium.CircleMarker(location=[p_lat, p_lon], radius=7, color="#d9534f", fill=True, fill_color="#d9534f", fill_opacity=0.9).add_to(m)
+                                # 🟢 অপারেটর মনোগ্রাম মার্কার (বড় আকারের)
+                                icon_html = f'''<div style="background:#ffffff; border:3px solid {color}; border-radius:8px; padding:3px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0px 3px 8px rgba(0,0,0,0.6); transform:translate(-50%, -50%);">
+                                                <img src="{logo_url}" style="width:36px; height:36px; object-fit:contain;" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Grameenphone_Logo.svg/512px-Grameenphone_Logo.svg.png'">
+                                             </div>'''
+                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=icon_html)).add_to(m)
 
                                 folium.Marker(
                                     [lbl_lat, lbl_lon],
@@ -870,8 +879,9 @@ if df is not None:
                                     )
                                 ).add_to(m)
 
+                            # 🟢 প্যাডিং বাড়িয়ে জুম আউট অটোমেটিকালি একটু সহনশীল রাখা হয়েছে
                             if len(all_bounds) > 1:
-                                m.fit_bounds(all_bounds, padding=[30, 30])
+                                m.fit_bounds(all_bounds, padding=[80, 80])
 
                             st_folium(m, use_container_width=True, height=550, key="map_multi")
 

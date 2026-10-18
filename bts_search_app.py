@@ -403,20 +403,19 @@ def load_data_optimized(file_or_path):
         
     return df
 
-# 🟢 অপারেটর ভিত্তিক কালার ফাংশন
 def get_operator_color(provider_name):
     prov = str(provider_name).lower().strip()
     
     if any(x in prov for x in ['gp', 'grameen', 'grameenphone']):
-        return '#00a3e0' # GP Blue
+        return '#00a3e0'
     elif 'robi' in prov or 'airtel' in prov:
-        return '#ea4335' # Red Pin
+        return '#ea4335'
     elif any(x in prov for x in ['bl', 'banglalink']):
-        return '#ff6600' # BL Orange
+        return '#ff6600'
     elif any(x in prov for x in ['teletalk', 'tl']):
-        return '#28a745' # Teletalk Green
+        return '#28a745'
     else:
-        return '#ea4335' # Default Red Pin
+        return '#ea4335'
 
 def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
     points = [[lat, lon]]
@@ -483,7 +482,7 @@ st.sidebar.header("⚙️ সেক্টর সেটিংস")
 sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50)
 beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
 
-def render_folium_map(center_lat, center_lon, zoom=16):
+def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     if st.session_state['map_type'] == "Google Hybrid":
         m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
         folium.TileLayer(
@@ -642,250 +641,268 @@ if df is not None:
     # রেজাল্ট প্রদর্শন
     filtered_df = st.session_state.get('active_search_result', None)
 
-    if filtered_df is not None:
-        if not filtered_df.empty:
-            st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
+    if filtered_df is not None and not filtered_df.empty:
+        st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
 
-            if len(filtered_df) == 1:
-                row = filtered_df.iloc[0]
-                st.subheader("📌 বিটিএস সাইট বিস্তারিত (Site Details)")
+        if len(filtered_df) == 1:
+            row = filtered_df.iloc[0]
+            st.subheader("📌 বিটিএস সাইট বিস্তারিত (Site Details)")
 
-                lac_val = clean_val(row.get(lac_col))
-                cell_val = clean_val(row.get(cell_col))
-                dir_val = clean_val(row.get(dir_col, '0'))
-                provider_val = str(row.get(provider_col, 'N/A'))
-                lat_val_str = str(row.get(lat_col, 'N/A'))
-                lon_val_str = str(row.get(lon_col, 'N/A'))
-                address_val = str(row.get(addr_col, 'N/A')) if addr_col else "N/A"
+            lac_val = clean_val(row.get(lac_col))
+            cell_val = clean_val(row.get(cell_col))
+            dir_val = clean_val(row.get(dir_col, '0'))
+            provider_val = str(row.get(provider_col, 'N/A'))
+            lat_val_str = str(row.get(lat_col, 'N/A'))
+            lon_val_str = str(row.get(lon_col, 'N/A'))
+            address_val = str(row.get(addr_col, 'N/A')) if addr_col else "N/A"
 
-                st.markdown(f"""
-                <div class="site-card">
-                    <div class="site-details-inline">
-                        <div><strong>Provider:</strong> {provider_val}</div>
-                        <div><strong>LAC:</strong> {lac_val}</div>
-                        <div><strong>CELL ID:</strong> {cell_val}</div>
-                        <div><strong>Direction:</strong> {dir_val}°</div>
-                        <div><strong>Latitude:</strong> {lat_val_str}</div>
-                        <div><strong>Longitude:</strong> {lon_val_str}</div>
-                    </div>
-                    <div class="site-address-text">
-                        <strong>Site Address:</strong> {address_val}
-                    </div>
+            st.markdown(f"""
+            <div class="site-card">
+                <div class="site-details-inline">
+                    <div><strong>Provider:</strong> {provider_val}</div>
+                    <div><strong>LAC:</strong> {lac_val}</div>
+                    <div><strong>CELL ID:</strong> {cell_val}</div>
+                    <div><strong>Direction:</strong> {dir_val}°</div>
+                    <div><strong>Latitude:</strong> {lat_val_str}</div>
+                    <div><strong>Longitude:</strong> {lon_val_str}</div>
                 </div>
-                """, unsafe_allow_html=True)
+                <div class="site-address-text">
+                    <strong>Site Address:</strong> {address_val}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-                lat, lon = row.get(lat_col), row.get(lon_col)
-                if pd.notnull(lat) and pd.notnull(lon):
+            lat, lon = row.get(lat_col), row.get(lon_col)
+            if pd.notnull(lat) and pd.notnull(lon):
+                try:
+                    lat_val, lon_val = float(lat), float(lon)
+                    st.markdown("---")
+                    
+                    m_hdr_col, m_btn_col = st.columns([2, 1])
+                    with m_hdr_col:
+                        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+                    with m_btn_col:
+                        btn_c1, btn_c2 = st.columns(2)
+                        with btn_c1:
+                            if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True):
+                                st.session_state['map_type'] = "OpenStreetMap"
+                                st.rerun()
+                        with btn_c2:
+                            if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True):
+                                st.session_state['map_type'] = "Google Hybrid"
+                                st.rerun()
+                    
+                    m = render_folium_map(lat_val, lon_val, zoom=16)
+
+                    pin_color = get_operator_color(row.get(provider_col, ''))
+                    label_text = f"{lac_val}|{cell_val}|{dir_val}°"
+
+                    lbl_lat, lbl_lon = lat_val, lon_val
                     try:
-                        lat_val, lon_val = float(lat), float(lon)
+                        azimuth_val = float(dir_val)
+                        wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
+                            lat_val, lon_val, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
+                        )
+                        # সেক্টর ড্র
+                        folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
+                        
+                        # 🟢 নির্দেশক তীর চিহ্ন
+                        folium.PolyLine(
+                            locations=[[lat_val, lon_val], [target_lat, target_lon]],
+                            color="#FFD700",
+                            weight=4,
+                            opacity=0.9
+                        ).add_to(m)
+                        folium.RegularPolygonMarker(
+                            location=[target_lat, target_lon],
+                            fill_color="#FFD700",
+                            color="#FFD700",
+                            number_of_sides=3,
+                            radius=12,
+                            rotation=azimuth_val - 90
+                        ).add_to(m)
+
+                    except Exception:
+                        pass
+
+                    # 🟢 পিন মার্কার
+                    pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
+                        <svg viewBox="0 0 384 512" width="32" height="42">
+                            <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
+                            <circle cx="192" cy="192" r="70" fill="#ffffff"/>
+                        </svg>
+                    </div>'''
+                    folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
+
+                    folium.Marker(
+                        [lbl_lat, lbl_lon],
+                        icon=folium.DivIcon(
+                            html=f'''<div style="font-size: 11pt; font-weight: 800; color: #000; 
+                                    background-color: #fff; border: 2px solid #222; padding: 4px 8px; 
+                                    border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
+                                    white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
+                        )
+                    ).add_to(m)
+                    
+                    st_folium(m, use_container_width=True, height=550, key="map_single")
+                    st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
+                except ValueError:
+                    st.error("Latitude/Longitude মান সঠিক নয়।")
+        else:
+            st.dataframe(filtered_df, use_container_width=True)
+            if lat_col and lon_col:
+                map_df = filtered_df.dropna(subset=[lat_col, lon_col]).copy()
+                try:
+                    map_df[lat_col] = map_df[lat_col].astype(float)
+                    map_df[lon_col] = map_df[lon_col].astype(float)
+                    records = map_df.to_dict('records')
+                    
+                    if len(records) > 0:
                         st.markdown("---")
                         
                         m_hdr_col, m_btn_col = st.columns([2, 1])
                         with m_hdr_col:
-                            st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+                            st.subheader("🗺️ লোকেশন ও সেক্টর ডিরেকশন ম্যাপ")
                         with m_btn_col:
                             btn_c1, btn_c2 = st.columns(2)
                             with btn_c1:
-                                if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True):
+                                if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="m_btn_osm"):
                                     st.session_state['map_type'] = "OpenStreetMap"
                                     st.rerun()
                             with btn_c2:
-                                if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True):
+                                if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="m_btn_gh"):
                                     st.session_state['map_type'] = "Google Hybrid"
                                     st.rerun()
-                        
-                        m = render_folium_map(lat_val, lon_val, zoom=16)
 
-                        pin_color = get_operator_color(row.get(provider_col, ''))
-                        label_text = f"{lac_val}|{cell_val}|{dir_val}°"
+                        def haversine(lat1, lon1, lat2, lon2):
+                            R = 6371.0
+                            dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
+                            a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
+                            return R * 2 * asin(sqrt(a))
 
-                        lbl_lat, lbl_lon = lat_val, lon_val
-                        try:
-                            azimuth_val = float(dir_val)
-                            wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
-                                lat_val, lon_val, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
-                            )
-                            # সেক্টর ড্র
-                            folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
-                            
-                            # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
-                            folium.PolyLine(
-                                locations=[[lat_val, lon_val], [target_lat, target_lon]],
-                                color="#FFD700",
-                                weight=4,
-                                opacity=0.9
-                            ).add_to(m)
-                            folium.RegularPolygonMarker(
-                                location=[target_lat, target_lon],
-                                fill_color="#FFD700",
-                                color="#FFD700",
-                                number_of_sides=3,
-                                radius=12,
-                                rotation=azimuth_val - 90
-                            ).add_to(m)
+                        m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=14)
 
-                        except Exception:
-                            pass
+                        coords = []
+                        all_bounds = []
 
-                        # 🟢 গুগল স্টাইল অরিজিনাল পিন মার্কার (SVG Location Pin Icon)
-                        pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
-                            <svg viewBox="0 0 384 512" width="32" height="42">
-                                <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
-                                <circle cx="192" cy="192" r="70" fill="#ffffff"/>
-                            </svg>
-                        </div>'''
-                        folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
+                        for row in records:
+                            p_lat, p_lon = row[lat_col], row[lon_col]
+                            pin_color = get_operator_color(row.get(provider_col, ''))
+                            coords.append({'lat': p_lat, 'lon': p_lon})
+                            all_bounds.append([p_lat, p_lon])
 
-                        folium.Marker(
-                            [lbl_lat, lbl_lon],
-                            icon=folium.DivIcon(
-                                html=f'''<div style="font-size: 11pt; font-weight: 800; color: #000; 
-                                        background-color: #fff; border: 2px solid #222; padding: 4px 8px; 
-                                        border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
-                                        white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
-                            )
-                        ).add_to(m)
-                        
-                        st_folium(m, use_container_width=True, height=550, key="map_single")
-                        st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
-                    except ValueError:
-                        st.error("Latitude/Longitude মান সঠিক নয়।")
-            else:
-                st.dataframe(filtered_df, use_container_width=True)
-                if lat_col and lon_col:
-                    map_df = filtered_df.dropna(subset=[lat_col, lon_col]).copy()
-                    try:
-                        map_df[lat_col] = map_df[lat_col].astype(float)
-                        map_df[lon_col] = map_df[lon_col].astype(float)
-                        records = map_df.to_dict('records')
-                        
-                        if len(records) > 0:
-                            st.markdown("---")
-                            
-                            m_hdr_col, m_btn_col = st.columns([2, 1])
-                            with m_hdr_col:
-                                st.subheader("🗺️ লোকেশন ও সেক্টর ডিরেকশন ম্যাপ")
-                            with m_btn_col:
-                                btn_c1, btn_c2 = st.columns(2)
-                                with btn_c1:
-                                    if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="m_btn_osm"):
-                                        st.session_state['map_type'] = "OpenStreetMap"
-                                        st.rerun()
-                                with btn_c2:
-                                    if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="m_btn_gh"):
-                                        st.session_state['map_type'] = "Google Hybrid"
-                                        st.rerun()
+                            m_lac = clean_val(row.get(lac_col))
+                            m_cell = clean_val(row.get(cell_col))
+                            m_dir = clean_val(row.get(dir_col, '0'))
 
-                            def haversine(lat1, lon1, lat2, lon2):
-                                R = 6371.0
-                                dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
-                                a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
-                                return R * 2 * asin(sqrt(a))
+                            label_text = f"{m_lac}|{m_cell}|{m_dir}°"
+                            lbl_lat, lbl_lon = p_lat, p_lon
 
-                            m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=14)
-
-                            coords = []
-                            all_bounds = []
-
-                            for row in records:
-                                p_lat, p_lon = row[lat_col], row[lon_col]
-                                pin_color = get_operator_color(row.get(provider_col, ''))
-                                coords.append({'lat': p_lat, 'lon': p_lon})
-                                all_bounds.append([p_lat, p_lon])
-
-                                m_lac = clean_val(row.get(lac_col))
-                                m_cell = clean_val(row.get(cell_col))
-                                m_dir = clean_val(row.get(dir_col, '0'))
-
-                                label_text = f"{m_lac}|{m_cell}|{m_dir}°"
-                                lbl_lat, lbl_lon = p_lat, p_lon
-
-                                try:
-                                    azimuth_val = float(m_dir)
-                                    wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
-                                        p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
-                                    )
-                                    # সেক্টর ড্র
-                                    folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
-                                    
-                                    # 🟢 নির্দেশক তীর চিহ্ন (Direction Arrow Line)
-                                    folium.PolyLine(
-                                        locations=[[p_lat, p_lon], [target_lat, target_lon]],
-                                        color="#FFD700",
-                                        weight=4,
-                                        opacity=0.9
-                                    ).add_to(m)
-                                    folium.RegularPolygonMarker(
-                                        location=[target_lat, target_lon],
-                                        fill_color="#FFD700",
-                                        color="#FFD700",
-                                        number_of_sides=3,
-                                        radius=12,
-                                        rotation=azimuth_val - 90
-                                    ).add_to(m)
-
-                                except Exception:
-                                    pass
-
-                                # 🟢 গুগল স্টাইল অরিজিনাল পিন মার্কার (SVG Location Pin Icon)
-                                pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
-                                    <svg viewBox="0 0 384 512" width="32" height="42">
-                                        <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
-                                        <circle cx="192" cy="192" r="70" fill="#ffffff"/>
-                                    </svg>
-                                </div>'''
-                                folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=pin_html)).add_to(m)
-
-                                folium.Marker(
-                                    [lbl_lat, lbl_lon],
-                                    icon=folium.DivIcon(
-                                        html=f'''<div style="font-size: 10pt; font-weight: 800; color: #000; 
-                                                background-color: #fff; border: 2px solid #222; padding: 3px 7px; 
-                                                border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
-                                                white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
-                                    )
-                                ).add_to(m)
-
-                            for i in range(len(coords) - 1):
-                                p1, p2 = coords[i], coords[i+1]
-                                dist_km = haversine(p1['lat'], p1['lon'], p2['lat'], p2['lon'])
-                                dist_str = f"📏 {int(dist_km * 1000)} M" if dist_km < 1.0 else f"📏 {dist_km:.2f} KM"
-                                mid_lat, mid_lon = (p1['lat'] + p2['lat']) / 2, (p1['lon'] + p2['lon']) / 2
-
-                                folium.PolyLine(locations=[[p1['lat'], p1['lon']], [p2['lat'], p2['lon']]], color="#0056b3", weight=4, opacity=0.85, dash_array='6, 6').add_to(m)
+                            try:
+                                azimuth_val = float(m_dir)
+                                wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
+                                    p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
+                                )
+                                # সেক্টর ড্র
+                                folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                 
-                                folium.Marker(
-                                    [mid_lat, mid_lon], 
-                                    icon=folium.DivIcon(
-                                        html=f'''<div style="font-size: 11pt; font-weight: 900; color: #000; 
-                                                background-color: #ffffff; border: 2.5px solid #d9534f; padding: 4px 10px; 
-                                                border-radius: 6px; text-align: center; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
-                                                white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{dist_str}</div>'''
-                                    )
+                                # 🟢 নির্দেশক তীর চিহ্ন
+                                folium.PolyLine(
+                                    locations=[[p_lat, p_lon], [target_lat, target_lon]],
+                                    color="#FFD700",
+                                    weight=4,
+                                    opacity=0.9
+                                ).add_to(m)
+                                folium.RegularPolygonMarker(
+                                    location=[target_lat, target_lon],
+                                    fill_color="#FFD700",
+                                    color="#FFD700",
+                                    number_of_sides=3,
+                                    radius=12,
+                                    rotation=azimuth_val - 90
                                 ).add_to(m)
 
-                            if len(all_bounds) > 1:
-                                m.fit_bounds(all_bounds, padding=[80, 80])
+                            except Exception:
+                                pass
 
-                            st_folium(m, use_container_width=True, height=550, key="map_multi")
+                            # 🟢 পিন মার্কার
+                            pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
+                                <svg viewBox="0 0 384 512" width="32" height="42">
+                                    <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
+                                    <circle cx="192" cy="192" r="70" fill="#ffffff"/>
+                                </svg>
+                            </div>'''
+                            folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=pin_html)).add_to(m)
 
-                            origin = f"{coords[0]['lat']},{coords[0]['lon']}"
-                            destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"
+                            folium.Marker(
+                                [lbl_lat, lbl_lon],
+                                icon=folium.DivIcon(
+                                    html=f'''<div style="font-size: 10pt; font-weight: 800; color: #000; 
+                                            background-color: #fff; border: 2px solid #222; padding: 3px 7px; 
+                                            border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
+                                            white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
+                                )
+                            ).add_to(m)
+
+                        for i in range(len(coords) - 1):
+                            p1, p2 = coords[i], coords[i+1]
+                            dist_km = haversine(p1['lat'], p1['lon'], p2['lat'], p2['lon'])
+                            dist_str = f"📏 {int(dist_km * 1000)} M" if dist_km < 1.0 else f"📏 {dist_km:.2f} KM"
+                            mid_lat, mid_lon = (p1['lat'] + p2['lat']) / 2, (p1['lon'] + p2['lon']) / 2
+
+                            folium.PolyLine(locations=[[p1['lat'], p1['lon']], [p2['lat'], p2['lon']]], color="#0056b3", weight=4, opacity=0.85, dash_array='6, 6').add_to(m)
                             
-                            if len(coords) > 2:
-                                waypoints = "|".join([f"{c['lat']},{c['lon']}" for c in coords[1:-1]])
-                                multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&waypoints={waypoints}&travelmode=driving"
-                            elif len(coords) == 2:
-                                multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving"
-                            else:
-                                multi_gmap_link = f"https://www.google.com/maps?q={origin}"
+                            folium.Marker(
+                                [mid_lat, mid_lon], 
+                                icon=folium.DivIcon(
+                                    html=f'''<div style="font-size: 11pt; font-weight: 900; color: #000; 
+                                            background-color: #ffffff; border: 2.5px solid #d9534f; padding: 4px 10px; 
+                                            border-radius: 6px; text-align: center; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
+                                            white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{dist_str}</div>'''
+                                )
+                            ).add_to(m)
 
-                            st.markdown(f"### [🔗 Google map link (সকল লোকেশন একসাথে)]({multi_gmap_link})")
+                        if len(all_bounds) > 1:
+                            m.fit_bounds(all_bounds, padding=[80, 80])
 
-                    except Exception as e:
-                        st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
-        else:
-            st.error("❌ কোনো তথ্য পাওয়া যায়নি।")
+                        st_folium(m, use_container_width=True, height=550, key="map_multi")
+
+                        origin = f"{coords[0]['lat']},{coords[0]['lon']}"
+                        destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"
+                        
+                        if len(coords) > 2:
+                            waypoints = "|".join([f"{c['lat']},{c['lon']}" for c in coords[1:-1]])
+                            multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&waypoints={waypoints}&travelmode=driving"
+                        elif len(coords) == 2:
+                            multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving"
+                        else:
+                            multi_gmap_link = f"https://www.google.com/maps?q={origin}"
+
+                        st.markdown(f"### [🔗 Google map link (সকল লোকেশন একসাথে)]({multi_gmap_link})")
+
+                except Exception as e:
+                    st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
+    else:
+        # 🟢 সার্চ করার আগে ডিফল্ট ম্যাপ লোড হয়ে থাকার লজিক
+        st.markdown("---")
+        
+        m_hdr_col, m_btn_col = st.columns([2, 1])
+        with m_hdr_col:
+            st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+        with m_btn_col:
+            btn_c1, btn_c2 = st.columns(2)
+            with btn_c1:
+                if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="def_osm"):
+                    st.session_state['map_type'] = "OpenStreetMap"
+                    st.rerun()
+            with btn_c2:
+                if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="def_gh"):
+                    st.session_state['map_type'] = "Google Hybrid"
+                    st.rerun()
+
+        # ডিফল্ট ম্যাপ (বাংলাদেশ সেন্টারে)
+        default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
+        st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
 
 else:
     st.info("👈 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি।")

@@ -1,8 +1,6 @@
 import os
 import glob
 import math
-import json
-import base64
 import streamlit as st
 import pandas as pd
 import folium
@@ -10,46 +8,22 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন
+# ১. পেজ কনফিগারেশন (সাইডবার স্বয়ংক্রিয়ভাবে বন্ধ রাখা হয়েছে)
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# ২. ছবি ও লোগো লোড করার ফাংশন
-def get_image_base64(image_path):
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    return None
-
-# ৩. কাস্টম সিএসএস (সাইডবার টগল ফিক্স ও ডিজাইন)
+# ২. কাস্টম সিএসএস (সাইডবার ও অপ্রয়োজনীয় হেডার সম্পূর্ণ হাইড করার জন্য)
 st.markdown("""
     <style>
-        [data-testid="stSidebarCollapsedControl"] {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            z-index: 999999 !important;
-            top: 10px !important;
-            left: 10px !important;
-            background-color: #1f2937 !important;
-            border: 1px solid #374151 !important;
-            border-radius: 6px !important;
-        }
-
-        [data-testid="stSidebarCollapsedControl"] svg {
-            fill: #ffffff !important;
-            color: #ffffff !important;
-        }
-
         [data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
-            width: 330px !important;
-            padding-top: 0rem !important;
+            display: none !important;
+        }
+        [data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
         }
 
         #MainMenu, footer, [data-testid="stStatusWidget"], .viewerBadge_container__1A5G2 {
@@ -62,52 +36,6 @@ st.markdown("""
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
-        }
-
-        .profile-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 8px;
-            margin-top: 10px;
-        }
-
-        .profile-img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #007bff;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .profile-name-display {
-            font-size: 19px !important;
-            font-weight: 800 !important;
-            color: #FFFFFF !important;
-            line-height: 1.2 !important;
-        }
-
-        .role-badge {
-            background-color: #007bff !important;
-            color: #ffffff !important;
-            padding: 4px 12px !important;
-            border-radius: 12px !important;
-            font-size: 13px !important;
-            font-weight: bold !important;
-            display: inline-block !important;
-            margin-bottom: 12px !important;
-        }
-
-        .contact-box {
-            background-color: #ffffff !important;
-            border: 2px solid #ff4b4b !important;
-            border-left: 6px solid #ff4b4b !important;
-            border-radius: 8px !important;
-            padding: 12px 14px !important;
-            margin-top: 15px !important;
-            margin-bottom: 15px !important;
-            color: #111827 !important;
         }
 
         .site-card {
@@ -138,237 +66,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ------------------ ৪. ইউজার ডাটাবেস ------------------
-USER_FILE = "users_db.json"
-
-def load_users():
-    default_users = {
-        "admin": {"password": "adminpassword", "role": "Admin", "name": "ASI Shamim BPM"},
-        "user": {"password": "user123", "role": "User", "name": "General User"}
-    }
-    if os.path.exists(USER_FILE):
-        try:
-            with open(USER_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if data and isinstance(data, dict):
-                    if "admin" in data:
-                        data["admin"]["name"] = "ASI Shamim BPM"
-                        data["admin"]["role"] = "Admin"
-                    return data
-                return default_users
-        except Exception:
-            return default_users
-    else:
-        try:
-            with open(USER_FILE, "w", encoding="utf-8") as f:
-                json.dump(default_users, f, indent=4, ensure_ascii=False)
-        except Exception:
-            pass
-        return default_users
-
-def save_users(users_dict):
-    try:
-        with open(USER_FILE, "w", encoding="utf-8") as f:
-            json.dump(users_dict, f, indent=4, ensure_ascii=False)
-    except Exception:
-        pass
-
-if 'users_db' not in st.session_state:
-    st.session_state.users_db = load_users()
-
-if 'active_users' not in st.session_state:
-    st.session_state.active_users = set()
-
-if 'authenticated' not in st.session_state:
-    st.session_state['authenticated'] = False
-if 'username' not in st.session_state:
-    st.session_state['username'] = None
-
-if 'remember_username' not in st.session_state:
-    st.session_state['remember_username'] = ""
-if 'remember_password' not in st.session_state:
-    st.session_state['remember_password'] = ""
-
 if 'map_type' not in st.session_state:
     st.session_state['map_type'] = "OpenStreetMap"
-
-# ------------------ ৫. লগইন পেজ ------------------
-def login():
-    st.title("🔒 Location Finder Dashboard - Login")
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        default_u = st.session_state.get('remember_username', '')
-        default_p = st.session_state.get('remember_password', '')
-        
-        username_input = st.text_input("Username", value=default_u).strip().lower()
-        password_input = st.text_input("Password", type="password", value=default_p).strip()
-        
-        opt_col1, opt_col2 = st.columns([1, 1])
-        with opt_col1:
-            remember_me = st.checkbox("Remember password", value=bool(default_u))
-        with opt_col2:
-            forgot_click = st.popover("Forgot password?")
-            with forgot_click:
-                st.write("🔑 **পাসওয়ার্ড ভুলে গেছেন?**")
-                st.info("পাসওয়ার্ড রিসেট বা রিকভারির জন্য অ্যাডমিন এর সাথে যোগাযোগ করুন:\n\n📱 **01914594294**")
-
-        submit = st.button("Log In", type="primary", use_container_width=True)
-        
-        if submit:
-            st.session_state.users_db = load_users()
-            db = st.session_state.users_db
-            
-            if username_input in db and db[username_input]["password"] == password_input:
-                st.session_state['authenticated'] = True
-                st.session_state['username'] = username_input
-                st.session_state.active_users.add(username_input)
-                
-                if remember_me:
-                    st.session_state['remember_username'] = username_input
-                    st.session_state['remember_password'] = password_input
-                else:
-                    st.session_state['remember_username'] = ""
-                    st.session_state['remember_password'] = ""
-                    
-                st.rerun()
-            else:
-                st.error("❌ ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!")
-
-        st.markdown("""
-            <div class="contact-box">
-                📞 <b>জরুরী প্রয়োজনে এডমিনের সাথে যোগাযোগ:</b><br>
-                মোবাইল নাম্বার: <b>01914594294</b>
-            </div>
-        """, unsafe_allow_html=True)
-
-if not st.session_state['authenticated']:
-    login()
-    st.stop()
-
-# ------------------ ৬. সাইডবার ও ইউজার হেডার ------------------
-current_username = st.session_state['username']
-user_info = st.session_state.users_db.get(current_username, {"role": "User", "name": current_username, "password": ""})
-
-user_role = str(user_info.get('role', '')).lower()
-is_admin = (current_username == "admin") or (user_role == "admin")
-
-display_name = user_info.get("name", current_username)
-display_role = "Admin" if is_admin else "General User"
-
-img_b64 = None
-if is_admin:
-    img_b64 = get_image_base64("profile.jpg.jpg") or get_image_base64("profile.jpg")
-
-if is_admin and img_b64:
-    profile_html = f"""
-    <div class="profile-container">
-        <img src="data:image/jpeg;base64,{img_b64}" class="profile-img">
-        <div class="profile-name-display">{display_name}</div>
-    </div>
-    """
-else:
-    profile_html = f'''
-    <div class="profile-container">
-        <div style="font-size: 28px;">👤</div>
-        <div class="profile-name-display">{display_name}</div>
-    </div>
-    '''
-
-st.sidebar.markdown(profile_html, unsafe_allow_html=True)
-st.sidebar.markdown(f'<span class="role-badge">{display_role} Panel</span>', unsafe_allow_html=True)
-
-if st.sidebar.button("🚪 Logout", key="logout_btn"):
-    if current_username in st.session_state.active_users:
-        st.session_state.active_users.remove(current_username)
-    st.session_state['authenticated'] = False
-    st.session_state['username'] = None
-    st.rerun()
-
-st.sidebar.markdown("---")
-
-# ------------------ ৭. এডমিন কন্ট্রোল প্যানেল ------------------
-if is_admin:
-    with st.sidebar.expander("⚙️ Admin Control Panel", expanded=False):
-        st.write(f"👥 **অনলাইন/সক্রিয় ইউজার:** `{len(st.session_state.active_users)}` জন")
-        st.write(f"📂 **মোট রেজিস্টার্ড ইউজার:** `{len(st.session_state.users_db)}` জন")
-        
-        st.markdown("---")
-        st.markdown("**📜 রেজিস্টার্ড ইউজার তালিকা:**")
-        
-        for uid, udata in list(st.session_state.users_db.items()):
-            u_name = udata.get("name", uid)
-            u_role = udata.get("role", "User")
-            
-            col_u1, col_u2 = st.columns([3, 1])
-            with col_u1:
-                st.caption(f"👤 **{u_name}** (`{uid}`) - *{u_role}*")
-            with col_u2:
-                if uid != "admin":
-                    if st.button("🗑️", key=f"del_{uid}", help=f"Delete {uid}"):
-                        del st.session_state.users_db[uid]
-                        save_users(st.session_state.users_db)
-                        if uid in st.session_state.active_users:
-                            st.session_state.active_users.remove(uid)
-                        st.success(f"ইউজার '{uid}' মুছে ফেলা হয়েছে!")
-                        st.rerun()
-                else:
-                    st.caption("🔒 Main")
-
-        st.markdown("---")
-        st.markdown("**➕ নতুন ইউজার তৈরি করুন:**")
-        
-        if "new_name_val" not in st.session_state: st.session_state.new_name_val = ""
-        if "new_uid_val" not in st.session_state: st.session_state.new_uid_val = ""
-        if "new_pass_val" not in st.session_state: st.session_state.new_pass_val = ""
-
-        new_name = st.text_input("ইউজারের নাম", value=st.session_state.new_name_val, key="admin_new_name").strip()
-        new_userid = st.text_input("User ID (ইউজারনেম)", value=st.session_state.new_uid_val, key="admin_new_uid").strip().lower()
-        new_password = st.text_input("পাসওয়ার্ড", type="password", value=st.session_state.new_pass_val, key="admin_new_pass").strip()
-        new_role = st.selectbox("ইউজার রোল", ["User", "Admin"], key="admin_new_role")
-        
-        if st.button("নতুন ইউজার সেভ করুন", type="primary", use_container_width=True):
-            if new_userid and new_password:
-                if new_userid not in st.session_state.users_db:
-                    st.session_state.users_db[new_userid] = {
-                        "password": new_password,
-                        "role": new_role,
-                        "name": new_name if new_name else new_userid
-                    }
-                    save_users(st.session_state.users_db)
-                    st.session_state.users_db = load_users()
-                    
-                    st.session_state.new_name_val = ""
-                    st.session_state.new_uid_val = ""
-                    st.session_state.new_pass_val = ""
-                    
-                    st.success(f"✅ ইউজার '{new_userid}' সফলভাবে ক্রিয়েট হয়েছে!")
-                    st.rerun()
-                else:
-                    st.warning("⚠️ এই ইউজার আইডিটি ইতিমধ্যে বিদ্যমান!")
-            else:
-                st.error("আইডি এবং পাসওয়ার্ড উভয়ই পূরণ করুন।")
-
-# ------------------ ৮. পাসওয়ার্ড পরিবর্তন ------------------
-with st.sidebar.expander("🔑 সেটিংস (Password Change)"):
-    curr_pass = st.text_input("বর্তমান পাসওয়ার্ড", type="password", key="c_pass")
-    new_pass = st.text_input("নতুন পাসওয়ার্ড", type="password", key="n_pass")
-    conf_pass = st.text_input("নতুন পাসওয়ার্ড নিশ্চিত করুন", type="password", key="cnf_pass")
-    
-    if st.button("পাসওয়ার্ড আপডেট করুন", use_container_width=True):
-        if user_info["password"] == curr_pass:
-            if new_pass and new_pass == conf_pass:
-                st.session_state.users_db[current_username]["password"] = new_pass
-                save_users(st.session_state.users_db)
-                st.session_state.users_db = load_users()
-                
-                st.success("✅ পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে! পুনরায় লগইন করুন।")
-                st.rerun()
-            else:
-                st.error("নতুন পাসওয়ার্ড দুটি মিলছে না!")
-        else:
-            st.error("বর্তমান পাসওয়ার্ড ভুল হয়েছে!")
-
-st.sidebar.markdown("---")
 
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
@@ -451,32 +150,15 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '')
 
-# ------------------ ৯. ফাইল লোড ------------------
+# ------------------ অটো ফাইল লোড (ফোল্ডার থেকে) ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
-auto_file = None
 if all_files:
-    auto_file = all_files[0]
     try:
-        df = load_data_optimized(auto_file)
-    except Exception as e:
-        if is_admin:
-            st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
-
-if is_admin:
-    st.sidebar.header("📁 ডেটা সোর্স")
-    if auto_file and df is not None:
-        st.sidebar.success(f"📂 **{auto_file}** লোড হয়েছে!\n\nমোট রো: {len(df):,}")
-        
-    uploaded_file = st.sidebar.file_uploader("অন্য কোনো ফাইল আপলোড করুন (Admin Only):", type=["parquet", "csv", "xlsx"])
-    if uploaded_file is not None:
-        try:
-            df = load_data_optimized(uploaded_file)
-            st.sidebar.success(f"নতুন ফাইল সফলভাবে লোড হয়েছে! মোট রো: {len(df):,}")
-        except Exception as e:
-            st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
-    st.sidebar.markdown("---")
+        df = load_data_optimized(all_files[0])
+    except Exception:
+        pass
 
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     if st.session_state['map_type'] == "Google Hybrid":
@@ -494,10 +176,8 @@ def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     Fullscreen(position='topright').add_to(m)
     return m
 
-# ------------------ ১০. মূল সার্চ ------------------
+# ------------------ মূল সার্চ ইন্টারফেস ------------------
 if df is not None:
-    st.markdown("---")
-    
     col_names = df.columns.tolist()
 
     lac_col = next((c for c in col_names if 'lac' in c.lower() and c != '_search_lac'), col_names[0])
@@ -545,7 +225,7 @@ if df is not None:
             cell_num = st.number_input("CELL ID", value=None, step=1, format="%d", placeholder="CELL ID লিখুন", key="s_cell_only")
             cell_val_in = str(int(cell_num)) if cell_num is not None else ""
         elif selected_method == "BTS Address":
-            address_val_in = st.text_input("BTS Address", placeholder="ঠিকানা বা এলাকার নাম লিখুন (যেমন: Uttara, Askona)", key="s_addr_only").strip()
+            address_val_in = st.text_input("BTS Address", placeholder="ঠিকানা বা এলাকার নাম লিখুন", key="s_addr_only").strip()
 
         search_button = st.button("🔍 সার্চ করুন", type="primary", use_container_width=True, key="single_btn")
 
@@ -603,9 +283,9 @@ if df is not None:
     with tab2:
         col1, col2 = st.columns(2)
         with col1: 
-            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="24051, 24051, 24051", key="m_lac")
+            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="24051, 24051", key="m_lac")
         with col2: 
-            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="55408, 55409, 55410", key="m_cell")
+            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="55408, 55409", key="m_cell")
 
         multi_search_button = st.button("🔍 একাধিক সার্চ করুন", type="primary", use_container_width=True, key="multi_btn")
 
@@ -634,10 +314,9 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপের ওপরে সেক্টর সেটিংস বক্স (সার্চ রেজাল্টের আগে বা ডিফল্ট ম্যাপের ওপরে)
+    # 🟢 ম্যাপের ওপরে সেক্টর সেটিংস বক্স
     st.markdown("---")
     
-    # ম্যাপ হেডার ও কন্ট্রোল বক্স
     m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
     with m_hdr_col:
         st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
@@ -652,7 +331,6 @@ if df is not None:
                 st.session_state['map_type'] = "Google Hybrid"
                 st.rerun()
 
-    # ম্যাপের ওপরের স্লাইডার বক্স (সেক্টর কাভারেজ ও অ্যাঙ্গেল)
     with st.expander("⚙️ সেক্টর সেটিংস (কভারেজ ও অ্যাঙ্গেল পরিবর্তন করুন)", expanded=True):
         sc_col1, sc_col2 = st.columns(2)
         with sc_col1:
@@ -710,10 +388,8 @@ if df is not None:
                         wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
                             lat_val, lon_val, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                         )
-                        # সেক্টর ড্র
                         folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                         
-                        # 🟢 নির্দেশক তীর চিহ্ন
                         folium.PolyLine(
                             locations=[[lat_val, lon_val], [target_lat, target_lon]],
                             color="#FFD700",
@@ -732,7 +408,6 @@ if df is not None:
                     except Exception:
                         pass
 
-                    # 🟢 পিন মার্কার
                     pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
                         <svg viewBox="0 0 384 512" width="32" height="42">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
@@ -794,10 +469,8 @@ if df is not None:
                                 wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
                                     p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
                                 )
-                                # সেক্টর ড্র
                                 folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                 
-                                # 🟢 নির্দেশক তীর চিহ্ন
                                 folium.PolyLine(
                                     locations=[[p_lat, p_lon], [target_lat, target_lon]],
                                     color="#FFD700",
@@ -816,7 +489,6 @@ if df is not None:
                             except Exception:
                                 pass
 
-                            # 🟢 পিন মার্কার
                             pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
                                 <svg viewBox="0 0 384 512" width="32" height="42">
                                     <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
@@ -874,7 +546,6 @@ if df is not None:
                 except Exception as e:
                     st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
     else:
-        # সার্চ করার আগে ডিফল্ট ম্যাপ লোড হয়ে থাকার লজিক
         default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
         st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
 

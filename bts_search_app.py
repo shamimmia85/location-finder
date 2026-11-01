@@ -314,7 +314,7 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপের ওপরে সরাসরি স্লাইডার বক্স (হেডার টেক্স트 ছাড়া)
+    # 🟢 ম্যাপ হেডার এবং ঠিক তার নিচে স্লাইডার দুটি যুক্ত করা হয়েছে
     st.markdown("---")
     
     m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
@@ -331,13 +331,7 @@ if df is not None:
                 st.session_state['map_type'] = "Google Hybrid"
                 st.rerun()
 
-    # স্লাইডার দুটি সরাসরি কন্টেইনার বা কলাম আকারে ম্যাপের ওপরে
-    st.markdown("""
-        <style>
-        .stSlider { padding-top: 0px !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
+    # ছবির ফরম্যাট অনুযায়ী ঠিক ম্যাপের ওপর স্লাইডার দুটি
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")

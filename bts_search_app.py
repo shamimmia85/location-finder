@@ -8,7 +8,7 @@ from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
-# ১. পেজ কনফিগারেশন (সাইডবার স্বয়ংক্রিয়ভাবে বন্ধ রাখা হয়েছে)
+# ১. পেজ কনফিগারেশন
 st.set_page_config(
     page_title="Location Finder Dashboard", 
     page_icon="📡", 
@@ -314,7 +314,7 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপের ওপরে সেক্টর সেটিংস বক্স
+    # 🟢 ম্যাপের ওপরে সরাসরি স্লাইডার বক্স (হেডার টেক্স트 ছাড়া)
     st.markdown("---")
     
     m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
@@ -331,12 +331,18 @@ if df is not None:
                 st.session_state['map_type'] = "Google Hybrid"
                 st.rerun()
 
-    with st.expander("⚙️ সেক্টর সেটিংস (কভারেজ ও অ্যাঙ্গেল পরিবর্তন করুন)", expanded=True):
-        sc_col1, sc_col2 = st.columns(2)
-        with sc_col1:
-            sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
-        with sc_col2:
-            beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10, key="map_sec_ang")
+    # স্লাইডার দুটি সরাসরি কন্টেইনার বা কলাম আকারে ম্যাপের ওপরে
+    st.markdown("""
+        <style>
+        .stSlider { padding-top: 0px !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    sc_col1, sc_col2 = st.columns(2)
+    with sc_col1:
+        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
+    with sc_col2:
+        beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10, key="map_sec_ang")
 
     # রেজাল্ট প্রদর্শন
     filtered_df = st.session_state.get('active_search_result', None)

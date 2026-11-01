@@ -323,9 +323,8 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপের ওপর কাস্টম স্টাইলিশ বক্সে স্লাইডার দুটো (কাভারেজ: 600, অ্যাঙ্গেল: 90)
+    # 🟢 "লোকেশন ও ডিরেকশন ম্যাপ" লেখাটি ডিলিট করে শুধু স্লাইডার বক্স রাখা হয়েছে
     st.markdown("---")
-    st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
 
     st.markdown('<div class="sector-settings-card">', unsafe_allow_html=True)
     sc_col1, sc_col2 = st.columns(2)

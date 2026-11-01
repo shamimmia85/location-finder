@@ -4,7 +4,7 @@ import math
 import streamlit as st
 import pandas as pd
 import folium
-from folium.plugins import Fullscreen, LayerControl
+from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
@@ -65,6 +65,9 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
+if 'map_type' not in st.session_state:
+    st.session_state['map_type'] = "OpenStreetMap"
 
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
@@ -158,23 +161,19 @@ if all_files:
         pass
 
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
-    
-    # বিল্ট-ইন একাধিক লেয়ার (Street, Satellite, Hybrid)
-    folium.TileLayer('OpenStreetMap', name='Street').add_to(m)
-    folium.TileLayer(
-        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        attr='Esri',
-        name='Satellite'
-    ).add_to(m)
-    folium.TileLayer(
-        tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-        attr='Google',
-        name='Hybrid'
-    ).add_to(m)
-    
+    if st.session_state['map_type'] == "Google Hybrid":
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
+        folium.TileLayer(
+            tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            attr='Google',
+            name='Google Hybrid',
+            max_zoom=21,
+            overlay=False,
+            control=True
+        ).add_to(m)
+    else:
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles="OpenStreetMap")
     Fullscreen(position='topright').add_to(m)
-    LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
 # ------------------ মূল সার্চ ইন্টারফেস ------------------
@@ -315,10 +314,24 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপ হেডার এবং স্লাইডার দুটি ঠিক ম্যাপের ওপরে
+    # 🟢 ম্যাপ হেডার এবং ঠিক তার নিচে স্লাইডার দুটি যুক্ত করা হয়েছে
     st.markdown("---")
-    st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+    
+    m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
+    with m_hdr_col:
+        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+    with m_btn_col:
+        btn_c1, btn_c2 = st.columns(2)
+        with btn_c1:
+            if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="map_osm_btn"):
+                st.session_state['map_type'] = "OpenStreetMap"
+                st.rerun()
+        with btn_c2:
+            if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="map_gh_btn"):
+                st.session_state['map_type'] = "Google Hybrid"
+                st.rerun()
 
+    # ছবির ফরম্যাট অনুযায়ী ঠিক ম্যাপের ওপর স্লাইডার দুটি
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")

@@ -4,7 +4,7 @@ import math
 import streamlit as st
 import pandas as pd
 import folium
-from folium.plugins import Fullscreen
+from folium.plugins import Fullscreen, LayerControl
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
@@ -65,9 +65,6 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
-
-if 'map_type' not in st.session_state:
-    st.session_state['map_type'] = "OpenStreetMap"
 
 st.title("📡 Location Finder Dashboard")
 st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
@@ -161,19 +158,23 @@ if all_files:
         pass
 
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
-    if st.session_state['map_type'] == "Google Hybrid":
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
-        folium.TileLayer(
-            tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-            attr='Google',
-            name='Google Hybrid',
-            max_zoom=21,
-            overlay=False,
-            control=True
-        ).add_to(m)
-    else:
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles="OpenStreetMap")
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
+    
+    # বিল্ট-ইন একাধিক লেয়ার (Street, Satellite, Hybrid)
+    folium.TileLayer('OpenStreetMap', name='Street').add_to(m)
+    folium.TileLayer(
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='Esri',
+        name='Satellite'
+    ).add_to(m)
+    folium.TileLayer(
+        tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+        attr='Google',
+        name='Hybrid'
+    ).add_to(m)
+    
     Fullscreen(position='topright').add_to(m)
+    LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
 # ------------------ মূল সার্চ ইন্টারফেস ------------------
@@ -314,24 +315,10 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপ হেডার এবং ঠিক তার নিচে স্লাইডার দুটি যুক্ত করা হয়েছে
+    # 🟢 ম্যাপ হেডার এবং স্লাইডার দুটি ঠিক ম্যাপের ওপরে
     st.markdown("---")
-    
-    m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
-    with m_hdr_col:
-        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
-    with m_btn_col:
-        btn_c1, btn_c2 = st.columns(2)
-        with btn_c1:
-            if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="map_osm_btn"):
-                st.session_state['map_type'] = "OpenStreetMap"
-                st.rerun()
-        with btn_c2:
-            if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="map_gh_btn"):
-                st.session_state['map_type'] = "Google Hybrid"
-                st.rerun()
+    st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
 
-    # ছবির ফরম্যাট অনুযায়ী ঠিক ম্যাপের ওপর স্লাইডার দুটি
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
@@ -422,132 +409,4 @@ if df is not None:
                             html=f'''<div style="font-size: 11pt; font-weight: 800; color: #000; 
                                     background-color: #fff; border: 2px solid #222; padding: 4px 8px; 
                                     border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
-                                    white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
-                        )
-                    ).add_to(m)
-                    
-                    st_folium(m, use_container_width=True, height=550, key="map_single")
-                    st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
-                except ValueError:
-                    st.error("Latitude/Longitude মান সঠিক নয়।")
-        else:
-            st.dataframe(filtered_df, use_container_width=True)
-            if lat_col and lon_col:
-                map_df = filtered_df.dropna(subset=[lat_col, lon_col]).copy()
-                try:
-                    map_df[lat_col] = map_df[lat_col].astype(float)
-                    map_df[lon_col] = map_df[lon_col].astype(float)
-                    records = map_df.to_dict('records')
-                    
-                    if len(records) > 0:
-                        def haversine(lat1, lon1, lat2, lon2):
-                            R = 6371.0
-                            dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
-                            a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
-                            return R * 2 * asin(sqrt(a))
-
-                        m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=14)
-
-                        coords = []
-                        all_bounds = []
-
-                        for row in records:
-                            p_lat, p_lon = row[lat_col], row[lon_col]
-                            pin_color = get_operator_color(row.get(provider_col, ''))
-                            coords.append({'lat': p_lat, 'lon': p_lon})
-                            all_bounds.append([p_lat, p_lon])
-
-                            m_lac = clean_val(row.get(lac_col))
-                            m_cell = clean_val(row.get(cell_col))
-                            m_dir = clean_val(row.get(dir_col, '0'))
-
-                            label_text = f"{m_lac}|{m_cell}|{m_dir}°"
-                            lbl_lat, lbl_lon = p_lat, p_lon
-
-                            try:
-                                azimuth_val = float(m_dir)
-                                wedge_points, lbl_lat, lbl_lon, target_lat, target_lon = create_sector_wedge(
-                                    p_lat, p_lon, azimuth_val, distance_meters=sector_radius, beamwidth=beam_angle
-                                )
-                                folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
-                                
-                                folium.PolyLine(
-                                    locations=[[p_lat, p_lon], [target_lat, target_lon]],
-                                    color="#FFD700",
-                                    weight=4,
-                                    opacity=0.9
-                                ).add_to(m)
-                                folium.RegularPolygonMarker(
-                                    location=[target_lat, target_lon],
-                                    fill_color="#FFD700",
-                                    color="#FFD700",
-                                    number_of_sides=3,
-                                    radius=12,
-                                    rotation=azimuth_val - 90
-                                ).add_to(m)
-
-                            except Exception:
-                                pass
-
-                            pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
-                                <svg viewBox="0 0 384 512" width="32" height="42">
-                                    <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
-                                    <circle cx="192" cy="192" r="70" fill="#ffffff"/>
-                                </svg>
-                            </div>'''
-                            folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=pin_html)).add_to(m)
-
-                            folium.Marker(
-                                [lbl_lat, lbl_lon],
-                                icon=folium.DivIcon(
-                                    html=f'''<div style="font-size: 10pt; font-weight: 800; color: #000; 
-                                            background-color: #fff; border: 2px solid #222; padding: 3px 7px; 
-                                            border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
-                                            white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
-                                )
-                            ).add_to(m)
-
-                        for i in range(len(coords) - 1):
-                            p1, p2 = coords[i], coords[i+1]
-                            dist_km = haversine(p1['lat'], p1['lon'], p2['lat'], p2['lon'])
-                            dist_str = f"📏 {int(dist_km * 1000)} M" if dist_km < 1.0 else f"📏 {dist_km:.2f} KM"
-                            mid_lat, mid_lon = (p1['lat'] + p2['lat']) / 2, (p1['lon'] + p2['lon']) / 2
-
-                            folium.PolyLine(locations=[[p1['lat'], p1['lon']], [p2['lat'], p2['lon']]], color="#0056b3", weight=4, opacity=0.85, dash_array='6, 6').add_to(m)
-                            
-                            folium.Marker(
-                                [mid_lat, mid_lon], 
-                                icon=folium.DivIcon(
-                                    html=f'''<div style="font-size: 11pt; font-weight: 900; color: #000; 
-                                            background-color: #ffffff; border: 2.5px solid #d9534f; padding: 4px 10px; 
-                                            border-radius: 6px; text-align: center; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
-                                            white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{dist_str}</div>'''
-                                )
-                            ).add_to(m)
-
-                        if len(all_bounds) > 1:
-                            m.fit_bounds(all_bounds, padding=[80, 80])
-
-                        st_folium(m, use_container_width=True, height=550, key="map_multi")
-
-                        origin = f"{coords[0]['lat']},{coords[0]['lon']}"
-                        destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"
-                        
-                        if len(coords) > 2:
-                            waypoints = "|".join([f"{c['lat']},{c['lon']}" for c in coords[1:-1]])
-                            multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&waypoints={waypoints}&travelmode=driving"
-                        elif len(coords) == 2:
-                            multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving"
-                        else:
-                            multi_gmap_link = f"https://www.google.com/maps?q={origin}"
-
-                        st.markdown(f"### [🔗 Google map link (সকল লোকেশন একসাথে)]({multi_gmap_link})")
-
-                except Exception as e:
-                    st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
-    else:
-        default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
-        st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
-
-else:
-    st.info("👈 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি।")
+                                    white-space

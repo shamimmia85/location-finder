@@ -4,7 +4,7 @@ import math
 import streamlit as st
 import pandas as pd
 import folium
-from folium.plugins import Fullscreen, LayerControl
+from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
@@ -67,7 +67,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।[cite: 10]")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -174,7 +174,7 @@ def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     ).add_to(m)
     
     Fullscreen(position='topright').add_to(m)
-    LayerControl(position='topleft', collapsed=False).add_to(m)
+    folium.LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
 # ------------------ মূল সার্চ ইন্টারফেস ------------------

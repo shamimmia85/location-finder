@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (সাইডবার ও অপ্রয়োজনীয় হেডার সম্পূর্ণ হাইড করার জন্য)
+# ২. কাস্টম সিএসএস (সাইডবার হাইড এবং স্লাইডার বক্স স্টাইলিং)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -36,6 +36,15 @@ st.markdown("""
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
+        }
+
+        .sector-settings-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 20px 2px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         .site-card {
@@ -113,7 +122,7 @@ def get_operator_color(provider_name):
     else:
         return '#ea4335'
 
-def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=60):
+def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     points = [[lat, lon]]
     start_angle = azimuth - (beamwidth / 2)
     end_angle = azimuth + (beamwidth / 2)
@@ -160,7 +169,6 @@ if all_files:
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
     
-    # ম্যাপের ভেতরের লেয়ার অপশন (Street, Satellite, Hybrid)
     folium.TileLayer('OpenStreetMap', name='Street').add_to(m)
     folium.TileLayer(
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -315,15 +323,17 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপ হেডার এবং স্লাইডার দুটি ঠিক ম্যাপের ওপরে
+    # 🟢 ম্যাপের ওপর কাস্টম স্টাইলিশ বক্সে স্লাইডার দুটো (কাভারেজ: 600, অ্যাঙ্গেল: 90)
     st.markdown("---")
     st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
 
+    st.markdown('<div class="sector-settings-card">', unsafe_allow_html=True)
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
     with sc_col2:
-        beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10, key="map_sec_ang")
+        beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=90, step=10, key="map_sec_ang")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # রেজাল্ট প্রদর্শন
     filtered_df = st.session_state.get('active_search_result', None)

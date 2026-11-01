@@ -4,7 +4,7 @@ import math
 import streamlit as st
 import pandas as pd
 import folium
-from folium.plugins import Fullscreen
+from folium.plugins import Fullscreen, LayerControl
 from streamlit_folium import st_folium
 from math import radians, cos, sin, asin, sqrt
 
@@ -66,11 +66,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-if 'map_type' not in st.session_state:
-    st.session_state['map_type'] = "OpenStreetMap"
-
 st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।[cite: 10]")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -161,19 +158,23 @@ if all_files:
         pass
 
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
-    if st.session_state['map_type'] == "Google Hybrid":
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
-        folium.TileLayer(
-            tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-            attr='Google',
-            name='Google Hybrid',
-            max_zoom=21,
-            overlay=False,
-            control=True
-        ).add_to(m)
-    else:
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles="OpenStreetMap")
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
+    
+    # ম্যাপের ভেতরের লেয়ার অপশন (Street, Satellite, Hybrid)
+    folium.TileLayer('OpenStreetMap', name='Street').add_to(m)
+    folium.TileLayer(
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='Esri',
+        name='Satellite'
+    ).add_to(m)
+    folium.TileLayer(
+        tiles='https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+        attr='Google',
+        name='Hybrid'
+    ).add_to(m)
+    
     Fullscreen(position='topright').add_to(m)
+    LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
 # ------------------ মূল সার্চ ইন্টারফেস ------------------
@@ -314,24 +315,10 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপ হেডার এবং ঠিক তার নিচে স্লাইডার দুটি যুক্ত করা হয়েছে
+    # 🟢 ম্যাপ হেডার এবং স্লাইডার দুটি ঠিক ম্যাপের ওপরে
     st.markdown("---")
-    
-    m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
-    with m_hdr_col:
-        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
-    with m_btn_col:
-        btn_c1, btn_c2 = st.columns(2)
-        with btn_c1:
-            if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="map_osm_btn"):
-                st.session_state['map_type'] = "OpenStreetMap"
-                st.rerun()
-        with btn_c2:
-            if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="map_gh_btn"):
-                st.session_state['map_type'] = "Google Hybrid"
-                st.rerun()
+    st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
 
-    # ছবির ফরম্যাট অনুযায়ী ঠিক ম্যাপের ওপর স্লাইডার দুটি
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
@@ -380,7 +367,7 @@ if df is not None:
                     m = render_folium_map(lat_val, lon_val, zoom=16)
 
                     pin_color = get_operator_color(row.get(provider_col, ''))
-                    label_text = f"{lac_val}|{cell_val}|{dir_val}°"
+                    label_text = f"LAC: {lac_val}<br>Cell: {cell_val}<br>Az: {dir_val}°"
 
                     lbl_lat, lbl_lon = lat_val, lon_val
                     try:
@@ -419,9 +406,9 @@ if df is not None:
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(
-                            html=f'''<div style="font-size: 11pt; font-weight: 800; color: #000; 
-                                    background-color: #fff; border: 2px solid #222; padding: 4px 8px; 
-                                    border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
+                            html=f'''<div style="font-size: 10pt; font-weight: 800; color: #fff; 
+                                    background-color: #0d1b2a; border: 2px solid #00a8e8; padding: 6px 10px; 
+                                    border-radius: 6px; text-align: left; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
                                     white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                         )
                     ).add_to(m)
@@ -461,7 +448,7 @@ if df is not None:
                             m_cell = clean_val(row.get(cell_col))
                             m_dir = clean_val(row.get(dir_col, '0'))
 
-                            label_text = f"{m_lac}|{m_cell}|{m_dir}°"
+                            label_text = f"LAC: {m_lac}<br>Cell: {m_cell}<br>Az: {m_dir}°"
                             lbl_lat, lbl_lon = p_lat, p_lon
 
                             try:
@@ -500,9 +487,9 @@ if df is not None:
                             folium.Marker(
                                 [lbl_lat, lbl_lon],
                                 icon=folium.DivIcon(
-                                    html=f'''<div style="font-size: 10pt; font-weight: 800; color: #000; 
-                                            background-color: #fff; border: 2px solid #222; padding: 3px 7px; 
-                                            border-radius: 5px; text-align: center; box-shadow: 0px 3px 6px rgba(0,0,0,0.4); 
+                                    html=f'''<div style="font-size: 10pt; font-weight: 800; color: #fff; 
+                                            background-color: #0d1b2a; border: 2px solid #00a8e8; padding: 6px 10px; 
+                                            border-radius: 6px; text-align: left; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
                                             white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                                 )
                             ).add_to(m)

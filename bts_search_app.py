@@ -478,10 +478,6 @@ if is_admin:
             st.sidebar.error(f"ফাইল লোড ত্রুটি: {e}")
     st.sidebar.markdown("---")
 
-st.sidebar.header("⚙️ সেক্টর সেটিংস")
-sector_radius = st.sidebar.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50)
-beam_angle = st.sidebar.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10)
-
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     if st.session_state['map_type'] == "Google Hybrid":
         m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
@@ -638,6 +634,32 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
+    # 🟢 ম্যাপের ওপরে সেক্টর সেটিংস বক্স (সার্চ রেজাল্টের আগে বা ডিফল্ট ম্যাপের ওপরে)
+    st.markdown("---")
+    
+    # ম্যাপ হেডার ও কন্ট্রোল বক্স
+    m_hdr_col, m_btn_col = st.columns([1.5, 1.5])
+    with m_hdr_col:
+        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
+    with m_btn_col:
+        btn_c1, btn_c2 = st.columns(2)
+        with btn_c1:
+            if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="map_osm_btn"):
+                st.session_state['map_type'] = "OpenStreetMap"
+                st.rerun()
+        with btn_c2:
+            if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="map_gh_btn"):
+                st.session_state['map_type'] = "Google Hybrid"
+                st.rerun()
+
+    # ম্যাপের ওপরের স্লাইডার বক্স (সেক্টর কাভারেজ ও অ্যাঙ্গেল)
+    with st.expander("⚙️ সেক্টর সেটিংস (কভারেজ ও অ্যাঙ্গেল পরিবর্তন করুন)", expanded=True):
+        sc_col1, sc_col2 = st.columns(2)
+        with sc_col1:
+            sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
+        with sc_col2:
+            beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=60, step=10, key="map_sec_ang")
+
     # রেজাল্ট প্রদর্শন
     filtered_df = st.session_state.get('active_search_result', None)
 
@@ -676,21 +698,6 @@ if df is not None:
             if pd.notnull(lat) and pd.notnull(lon):
                 try:
                     lat_val, lon_val = float(lat), float(lon)
-                    st.markdown("---")
-                    
-                    m_hdr_col, m_btn_col = st.columns([2, 1])
-                    with m_hdr_col:
-                        st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
-                    with m_btn_col:
-                        btn_c1, btn_c2 = st.columns(2)
-                        with btn_c1:
-                            if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True):
-                                st.session_state['map_type'] = "OpenStreetMap"
-                                st.rerun()
-                        with btn_c2:
-                            if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True):
-                                st.session_state['map_type'] = "Google Hybrid"
-                                st.rerun()
                     
                     m = render_folium_map(lat_val, lon_val, zoom=16)
 
@@ -758,22 +765,6 @@ if df is not None:
                     records = map_df.to_dict('records')
                     
                     if len(records) > 0:
-                        st.markdown("---")
-                        
-                        m_hdr_col, m_btn_col = st.columns([2, 1])
-                        with m_hdr_col:
-                            st.subheader("🗺️ লোকেশন ও সেক্টর ডিরেকশন ম্যাপ")
-                        with m_btn_col:
-                            btn_c1, btn_c2 = st.columns(2)
-                            with btn_c1:
-                                if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="m_btn_osm"):
-                                    st.session_state['map_type'] = "OpenStreetMap"
-                                    st.rerun()
-                            with btn_c2:
-                                if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="m_btn_gh"):
-                                    st.session_state['map_type'] = "Google Hybrid"
-                                    st.rerun()
-
                         def haversine(lat1, lon1, lat2, lon2):
                             R = 6371.0
                             dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
@@ -883,24 +874,7 @@ if df is not None:
                 except Exception as e:
                     st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
     else:
-        # 🟢 সার্চ করার আগে ডিফল্ট ম্যাপ লোড হয়ে থাকার লজিক
-        st.markdown("---")
-        
-        m_hdr_col, m_btn_col = st.columns([2, 1])
-        with m_hdr_col:
-            st.subheader("🗺️ লোকেশন ও ডিরেকশন ম্যাপ")
-        with m_btn_col:
-            btn_c1, btn_c2 = st.columns(2)
-            with btn_c1:
-                if st.button("OpenStreetMap", type="primary" if st.session_state['map_type'] == "OpenStreetMap" else "secondary", use_container_width=True, key="def_osm"):
-                    st.session_state['map_type'] = "OpenStreetMap"
-                    st.rerun()
-            with btn_c2:
-                if st.button("Google Hybrid", type="primary" if st.session_state['map_type'] == "Google Hybrid" else "secondary", use_container_width=True, key="def_gh"):
-                    st.session_state['map_type'] = "Google Hybrid"
-                    st.rerun()
-
-        # ডিফল্ট ম্যাপ (বাংলাদেশ সেন্টারে)
+        # সার্চ করার আগে ডিফল্ট ম্যাপ লোড হয়ে থাকার লজিক
         default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
         st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
 

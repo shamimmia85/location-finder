@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (স্লাইডার ও বক্স আরও ছোট এবং চিকন করার জন্য)
+# ২. কাস্টম সিএসএস (স্লাইডার উইডথ ছোট ও কম্প্যাক্ট করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,27 +38,19 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* আরও ছোট ও কমপ্যাক্ট স্লাইডার বক্স */
-        .ultra-small-slider-box {
+        /* স্লাইডার বক্স ছোট এবং মাঝবরাবর বা ছোট উইডথে রাখার জন্য */
+        .mini-slider-container {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 6px;
-            padding: 0px 12px -5px 12px;
+            padding: 5px 15px;
             margin-top: 8px;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
-        /* স্লাইডার টেক্সট ও হাইট ছোট করা */
         .stSlider label {
             font-size: 11px !important;
             color: #cbd5e1 !important;
-            margin-bottom: -15px !important;
-        }
-        
-        /* স্লাইডারের ভেতরের এলিমেন্ট ছোট রাখা */
-        div[data-baseweb="slider"] {
-            padding-top: 5px !important;
-            padding-bottom: 5px !important;
         }
 
         .site-card {
@@ -168,7 +160,7 @@ def clean_val(val):
             return str(int(f))
         return str(f)
     except Exception:
-        return str(val).replace('.0', '')
+        return str(val).replace('.0', '', regex=True)
 
 # ------------------ অটো ফাইল লোড (ফোল্ডার থেকে) ------------------
 df = None
@@ -371,14 +363,17 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে আরও ছোট ও চিকন স্লাইডার বক্স (কাভারেজ: 600, অ্যাঙ্গেল: 90)
+    # 🟢 ম্যাপের ঠিক ওপরে ছোট ও কমপ্যাক্ট সাইজের স্লাইডার (মাঝারি ও ছোট কলাম ব্যবহার করে)
     st.markdown("---")
-    st.markdown('<div class="ultra-small-slider-box">', unsafe_allow_html=True)
-    sc_col1, sc_col2 = st.columns(2)
-    with sc_col1:
+    st.markdown('<div class="mini-slider-container">', unsafe_allow_html=True)
+    
+    # উইডথ ছোট করার জন্য অতিরিক্ত দুটি ফাঁকা কলাম বা ছোট কলাম ব্যবহার করা হলো
+    _, c_mid1, c_mid2, _ = st.columns([0.5, 4.5, 4.5, 0.5])
+    with c_mid1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
-    with sc_col2:
+    with c_mid2:
         beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=90, step=10, key="map_sec_ang")
+        
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ম্যাপ রেন্ডারিং অংশ

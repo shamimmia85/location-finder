@@ -38,14 +38,17 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* স্লাইডার বক্স ছোট এবং মাঝবরাবর বা ছোট উইডথে রাখার জন্য */
-        .mini-slider-container {
+        /* স্লাইডারগুলোকে ছোট ও সুন্দর দেখানোর জন্য */
+        .tiny-slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 6px;
-            padding: 5px 15px;
-            margin-top: 8px;
+            padding: 4px 10px;
+            margin-top: 5px;
             margin-bottom: 5px;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .stSlider label {
@@ -363,15 +366,14 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে ছোট ও কমপ্যাক্ট সাইজের স্লাইডার (মাঝারি ও ছোট কলাম ব্যবহার করে)
+    # 🟢 ম্যাপের ঠিক ওপরে আরও ছোট আকারে পাশাপাশি স্লাইডার (Compact & Centered)
     st.markdown("---")
-    st.markdown('<div class="mini-slider-container">', unsafe_allow_html=True)
+    st.markdown('<div class="tiny-slider-box">', unsafe_allow_html=True)
     
-    # উইডথ ছোট করার জন্য অতিরিক্ত দুটি ফাঁকা কলাম বা ছোট কলাম ব্যবহার করা হলো
-    _, c_mid1, c_mid2, _ = st.columns([0.5, 4.5, 4.5, 0.5])
-    with c_mid1:
+    t_col1, t_col2 = st.columns(2)
+    with t_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
-    with c_mid2:
+    with t_col2:
         beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=90, step=10, key="map_sec_ang")
         
     st.markdown('</div>', unsafe_allow_html=True)

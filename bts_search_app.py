@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (সাইডবার হাইড এবং স্লাইডার বক্স স্টাইলিং)
+# ২. কাস্টম সিএসএস (স্লাইডার বক্স ছোট ও আকর্ষণীয় করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,13 +38,18 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        .sector-settings-card {
+        .compact-slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 12px 20px 2px 20px;
-            margin-bottom: 15px;
+            padding: 8px 15px 0px 15px;
+            margin-bottom: 10px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .stSlider label {
+            font-size: 13px !important;
+            color: #e2e8f0 !important;
         }
 
         .site-card {
@@ -323,10 +328,10 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 "লোকেশন ও ডিরেকশন ম্যাপ" লেখাটি ডিলিট করে শুধু স্লাইডার বক্স রাখা হয়েছে
+    # 🟢 ম্যাপের ওপরে ছোট ও কমপ্যাক্ট স্লাইডার বক্স (কাভারেজ: 600, অ্যাঙ্গেল: 90)
     st.markdown("---")
 
-    st.markdown('<div class="sector-settings-card">', unsafe_allow_html=True)
+    st.markdown('<div class="compact-slider-box">', unsafe_allow_html=True)
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")

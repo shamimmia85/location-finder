@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (স্লাইডার বক্স ছোট ও কম্প্যাক্ট করার জন্য)
+# ২. কাস্টম সিএসএস (স্লাইডার ও বক্স আরও ছোট এবং চিকন করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,21 +38,27 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* স্লাইডার বক্সটি ছোট এবং আকর্ষণীয় করার সিএসএস */
-        .small-slider-box {
+        /* আরও ছোট ও কমপ্যাক্ট স্লাইডার বক্স */
+        .ultra-small-slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 6px;
-            padding: 2px 12px 0px 12px;
-            margin-top: 10px;
-            margin-bottom: 5px;
-            max-width: 100%;
+            padding: 0px 12px -5px 12px;
+            margin-top: 8px;
+            margin-bottom: 4px;
         }
 
+        /* স্লাইডার টেক্সট ও হাইট ছোট করা */
         .stSlider label {
-            font-size: 12px !important;
+            font-size: 11px !important;
             color: #cbd5e1 !important;
-            margin-bottom: -10px !important;
+            margin-bottom: -15px !important;
+        }
+        
+        /* স্লাইডারের ভেতরের এলিমেন্ট ছোট রাখা */
+        div[data-baseweb="slider"] {
+            padding-top: 5px !important;
+            padding-bottom: 5px !important;
         }
 
         .site-card {
@@ -365,9 +371,9 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ঠিক ম্যাপের ওপরে ছোট ও কমপ্যাক্ট স্লাইডার বক্স (কাভারেজ: 600, অ্যাঙ্গেল: 90)
+    # 🟢 ম্যাপের ঠিক ওপরে আরও ছোট ও চিকন স্লাইডার বক্স (কাভারেজ: 600, অ্যাঙ্গেল: 90)
     st.markdown("---")
-    st.markdown('<div class="small-slider-box">', unsafe_allow_html=True)
+    st.markdown('<div class="ultra-small-slider-box">', unsafe_allow_html=True)
     sc_col1, sc_col2 = st.columns(2)
     with sc_col1:
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (স্লাইডার বক্স ছোট ও আকর্ষণীয় করার জন্য)
+# ২. কাস্টম সিএসএস (স্লাইডার বক্স ছোট ও কম্প্যাক্ট করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,18 +38,21 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        .compact-slider-box {
+        /* স্লাইডার বক্সটি ছোট এবং আকর্ষণীয় করার সিএসএস */
+        .small-slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 8px 15px 0px 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 2px 12px 0px 12px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            max-width: 100%;
         }
 
         .stSlider label {
-            font-size: 13px !important;
-            color: #e2e8f0 !important;
+            font-size: 12px !important;
+            color: #cbd5e1 !important;
+            margin-bottom: -10px !important;
         }
 
         .site-card {
@@ -81,7 +84,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।[cite: 10]")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -328,18 +331,7 @@ if df is not None:
 
             st.session_state['active_search_result'] = res_df
 
-    # 🟢 ম্যাপের ওপরে ছোট ও কমপ্যাক্ট স্লাইডার বক্স (কাভারেজ: 600, অ্যাঙ্গেল: 90)
-    st.markdown("---")
-
-    st.markdown('<div class="compact-slider-box">', unsafe_allow_html=True)
-    sc_col1, sc_col2 = st.columns(2)
-    with sc_col1:
-        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
-    with sc_col2:
-        beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=90, step=10, key="map_sec_ang")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # রেজাল্ট প্রদর্শন
+    # রেজাল্ট প্রদর্শন (যদি থাকে)
     filtered_df = st.session_state.get('active_search_result', None)
 
     if filtered_df is not None and not filtered_df.empty:
@@ -373,14 +365,30 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
+    # 🟢 ঠিক ম্যাপের ওপরে ছোট ও কমপ্যাক্ট স্লাইডার বক্স (কাভারেজ: 600, অ্যাঙ্গেল: 90)
+    st.markdown("---")
+    st.markdown('<div class="small-slider-box">', unsafe_allow_html=True)
+    sc_col1, sc_col2 = st.columns(2)
+    with sc_col1:
+        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
+    with sc_col2:
+        beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=90, step=10, key="map_sec_ang")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ম্যাপ রেন্ডারিং অংশ
+    if filtered_df is not None and not filtered_df.empty:
+        if len(filtered_df) == 1:
+            row = filtered_df.iloc[0]
             lat, lon = row.get(lat_col), row.get(lon_col)
             if pd.notnull(lat) and pd.notnull(lon):
                 try:
                     lat_val, lon_val = float(lat), float(lon)
-                    
                     m = render_folium_map(lat_val, lon_val, zoom=16)
 
                     pin_color = get_operator_color(row.get(provider_col, ''))
+                    lac_val = clean_val(row.get(lac_col))
+                    cell_val = clean_val(row.get(cell_col))
+                    dir_val = clean_val(row.get(dir_col, '0'))
                     label_text = f"LAC: {lac_val}<br>Cell: {cell_val}<br>Az: {dir_val}°"
 
                     lbl_lat, lbl_lon = lat_val, lon_val
@@ -405,7 +413,6 @@ if df is not None:
                             radius=12,
                             rotation=azimuth_val - 90
                         ).add_to(m)
-
                     except Exception:
                         pass
 
@@ -416,7 +423,6 @@ if df is not None:
                         </svg>
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
-
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(
@@ -448,7 +454,6 @@ if df is not None:
                             return R * 2 * asin(sqrt(a))
 
                         m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=14)
-
                         coords = []
                         all_bounds = []
 
@@ -461,7 +466,6 @@ if df is not None:
                             m_lac = clean_val(row.get(lac_col))
                             m_cell = clean_val(row.get(cell_col))
                             m_dir = clean_val(row.get(dir_col, '0'))
-
                             label_text = f"LAC: {m_lac}<br>Cell: {m_cell}<br>Az: {m_dir}°"
                             lbl_lat, lbl_lon = p_lat, p_lon
 
@@ -486,7 +490,6 @@ if df is not None:
                                     radius=12,
                                     rotation=azimuth_val - 90
                                 ).add_to(m)
-
                             except Exception:
                                 pass
 
@@ -497,7 +500,6 @@ if df is not None:
                                 </svg>
                             </div>'''
                             folium.Marker([p_lat, p_lon], icon=folium.DivIcon(html=pin_html)).add_to(m)
-
                             folium.Marker(
                                 [lbl_lat, lbl_lon],
                                 icon=folium.DivIcon(
@@ -515,7 +517,6 @@ if df is not None:
                             mid_lat, mid_lon = (p1['lat'] + p2['lat']) / 2, (p1['lon'] + p2['lon']) / 2
 
                             folium.PolyLine(locations=[[p1['lat'], p1['lon']], [p2['lat'], p2['lon']]], color="#0056b3", weight=4, opacity=0.85, dash_array='6, 6').add_to(m)
-                            
                             folium.Marker(
                                 [mid_lat, mid_lon], 
                                 icon=folium.DivIcon(
@@ -530,23 +531,10 @@ if df is not None:
                             m.fit_bounds(all_bounds, padding=[80, 80])
 
                         st_folium(m, use_container_width=True, height=550, key="map_multi")
-
-                        origin = f"{coords[0]['lat']},{coords[0]['lon']}"
-                        destination = f"{coords[-1]['lat']},{coords[-1]['lon']}"
-                        
-                        if len(coords) > 2:
-                            waypoints = "|".join([f"{c['lat']},{c['lon']}" for c in coords[1:-1]])
-                            multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&waypoints={waypoints}&travelmode=driving"
-                        elif len(coords) == 2:
-                            multi_gmap_link = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving"
-                        else:
-                            multi_gmap_link = f"https://www.google.com/maps?q={origin}"
-
-                        st.markdown(f"### [🔗 Google map link (সকল লোকেশন একসাথে)]({multi_gmap_link})")
-
                 except Exception as e:
                     st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
     else:
+        # সার্চ না করা থাকলে ডিফল্ট বাংলাদেশ কেন্দ্রিক ম্যাপ দেখাবে
         default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
         st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
 

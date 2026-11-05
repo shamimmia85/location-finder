@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (স্লাইডার বক্স ছোট ও আকর্ষণীয় করার জন্য)
+# ২. কাস্টম সিএসএস (স্লাইডার বক্স সুন্দর ও ছোট করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -130,7 +130,7 @@ def get_operator_color(provider_name):
     else:
         return '#ea4335'
 
-def create_sector_wedge(lat, lon, azimuth, distance_meters=1500, beamwidth=90):
+def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     points = [[lat, lon]]
     start_angle = azimuth - (beamwidth / 2)
     end_angle = azimuth + (beamwidth / 2)
@@ -365,11 +365,11 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে ছোট আকারে সেক্টর কাভারেজ স্লাইডার (ডিফল্ট মান 1500 মিটার এবং অ্যাঙ্গেল 90 ফিক্সড)
+    # 🟢 ম্যাপের ঠিক ওপরে ছোট আকারে সেক্টর কাভারেজ স্লাইডার (সর্বোচ্চ মান 1500 মিটার এবং ডিফল্ট 600)
     st.markdown("---")
     st.markdown('<div class="tiny-slider-box">', unsafe_allow_html=True)
     
-    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=3000, value=1500, step=50, key="map_sec_rad")
+    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
     beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড রাখা হলো
         
     st.markdown('</div>', unsafe_allow_html=True)

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট ও কম্প্যাক্ট করার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট এবং নির্দিষ্ট মাপে রাখার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,15 +38,19 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* আপনার দেওয়া লাল বক্সের মাপে স্লাইডারটি ছোট ও সুনির্দিষ্ট রাখা হলো */
-        .compact-slider-box {
+        /* স্লাইডারটিকে ছোট ও নির্দিষ্ট বক্সে রাখার জন্য ফিক্সড উইথ */
+        .stSlider {
+            max-width: 350px !important;
+        }
+
+        .slider-container {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 4px 12px;
-            margin-top: 8px;
-            margin-bottom: 8px;
-            max-width: 320px;
+            padding: 6px 14px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            max-width: 360px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
@@ -368,8 +372,8 @@ if df is not None:
 
     st.markdown("---")
 
-    # 🟢 আপনার দেওয়া বক্সের মাপ অনুযায়ী স্লাইডারটি ছোট বক্সে রাখা হলো
-    st.markdown('<div class="compact-slider-box">', unsafe_allow_html=True)
+    # 🟢 স্লাইডারটিকে ছোট এবং সুনির্দিষ্ট কমপ্যাক্ট বক্সে রাখা হলো
+    st.markdown('<div class="slider-container">', unsafe_allow_html=True)
     sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
     beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
     st.markdown('</div>', unsafe_allow_html=True)
@@ -416,9 +420,9 @@ if df is not None:
                     except Exception:
                         pass
 
-                    # 🟢 পিন পয়েন্টটি যাতে আপনার মার্ক করা নির্দিষ্ট জায়গার ভেতরে নিখুঁতভাবে বসে, সেজন্য সঠিক অ্যাঙ্কর পয়েন্ট সেট করা হলো
-                    pin_html = f'''<div style="width:30px; height:40px; transform:translate(-50%, -100%);">
-                        <svg viewBox="0 0 384 512" width="30" height="40">
+                    # 🟢 পিন পয়েন্ট যাতে একদম সঠিক লোকেশনে (lat, lon) থাকে তার জন্য সঠিক অ্যাঙ্কর ও ট্রান্সফর্ম সেট করা হলো
+                    pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
+                        <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                             <circle cx="192" cy="192" r="70" fill="#ffffff"/>
                         </svg>
@@ -496,8 +500,8 @@ if df is not None:
                             except Exception:
                                 pass
 
-                            pin_html = f'''<div style="width:30px; height:40px; transform:translate(-50%, -100%);">
-                                <svg viewBox="0 0 384 512" width="30" height="40">
+                            pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
+                                <svg viewBox="0 0 384 512" width="28" height="38">
                                     <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                                     <circle cx="192" cy="192" r="70" fill="#ffffff"/>
                                 </svg>

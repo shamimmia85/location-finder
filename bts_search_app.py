@@ -6,7 +6,6 @@ import pandas as pd
 import folium
 from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
-from streamlit_geolocation import streamlit_geolocation
 from math import radians, cos, sin, asin, sqrt
 
 # ১. পেজ কনফিগারেশন
@@ -39,7 +38,6 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* st.number_input এর প্লাস-মাইনাস বাটন লুকানোর জন্য */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -366,25 +364,6 @@ if df is not None:
             lon_val_str = str(row.get(lon_col, 'N/A'))
             address_val = str(row.get(addr_col, 'N/A')) if addr_col else "N/A"
 
-            # লাইভ লোকেশন থেকে দূরত্ব ক্যালকুলেশন উইজেট
-            loc = streamlit_geolocation()
-            distance_text = ""
-            user_lat, user_lon = None, None
-
-            if loc and loc.get('latitude') and loc.get('longitude'):
-                user_lat = loc.get('latitude')
-                user_lon = loc.get('longitude')
-                try:
-                    target_lat_val = float(row.get(lat_col))
-                    target_lon_val = float(row.get(lon_col))
-                    dist_km = haversine(user_lat, user_lon, target_lat_val, target_lon_val)
-                    if dist_km < 1.0:
-                        distance_text = f" | 📍 **আপনার অবস্থান থেকে দূরত্ব:** {int(dist_km * 1000)} মিটার"
-                    else:
-                        distance_text = f" | 📍 **আপনার অবস্থান থেকে দূরত্ব:** {dist_km:.2f} কিমি"
-                except Exception:
-                    pass
-
             st.markdown(f"""
             <div class="site-card">
                 <div class="site-details-inline">
@@ -396,7 +375,7 @@ if df is not None:
                     <div><strong>Longitude:</strong> {lon_val_str}</div>
                 </div>
                 <div class="site-address-text">
-                    <strong>Site Address:</strong> {address_val} {distance_text}
+                    <strong>Site Address:</strong> {address_val}
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -452,22 +431,6 @@ if df is not None:
                         ).add_to(m)
                     except Exception:
                         pass
-
-                    # যদি ব্রাউজার থেকে ইউজার লোকেশন পাওয়া যায়, তবে ম্যাপে ইউজারের লোকেশন পিন এবং লাইন যুক্ত করা হবে
-                    if 'user_lat' in locals() and user_lat and user_lon:
-                        folium.Marker(
-                            [user_lat, user_lon],
-                            popup="My Location",
-                            icon=folium.Icon(color="green", icon="user", prefix="fa")
-                        ).add_to(m)
-                        
-                        folium.PolyLine(
-                            locations=[[user_lat, user_lon], [lat_val, lon_val]],
-                            color="#28a745",
-                            weight=4,
-                            opacity=0.8,
-                            dash_array='5, 5'
-                        ).add_to(m)
 
                     pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
                         <svg viewBox="0 0 384 512" width="28" height="38">

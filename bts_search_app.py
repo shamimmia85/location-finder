@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (মডার্ন ও কমপ্যাক্ট স্লাইডার ডিজাইন)
+# ২. কাস্টম সিএসএস (ম্যাপের ওপর ভাসমান ছোট ও প্রফেশনাল স্লাইডার ডিজাইনের জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,22 +38,30 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* প্রফেশনাল ও ছোট কমপ্যাক্ট স্লাইডার কার্ড */
-        .pro-slider-container {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        /* ম্যাপের ওপর ছোট ও আকর্ষণীয় ওভারলে স্লাইডার বক্স */
+        .map-floating-slider {
+            position: absolute;
+            top: 15px;
+            left: 70px;
+            z-index: 999;
+            background: rgba(15, 23, 42, 0.90);
+            backdrop-filter: blur(8px);
             border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 8px 20px;
-            margin: 10px auto;
-            max-width: 400px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 6px 14px;
+            width: 280px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
-        .stSlider label {
-            font-size: 12px !important;
+        .map-floating-slider .stSlider label {
+            font-size: 11px !important;
             font-weight: 600 !important;
             color: #38bdf8 !important;
-            letter-spacing: 0.5px;
+            margin-bottom: -5px !important;
+        }
+
+        .map-wrapper {
+            position: relative;
         }
 
         .site-card {
@@ -366,16 +374,18 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে প্রফেশনাল ও ছোট কমপ্যাক্ট স্লাইডার (সর্বোচ্চ মান 1500 মিটার এবং ডিফল্ট 600)
+    # 🟢 ম্যাপের ভেতরে বাম কোণায় ভাসমান ছোট স্লাইডার বক্স (অ্যাঙ্গেল 90 ফিক্সড)
     st.markdown("---")
-    st.markdown('<div class="pro-slider-container">', unsafe_allow_html=True)
     
+    # ম্যাপ রেন্ডারিং অংশ শুরু
+    st.markdown('<div class="map-wrapper">', unsafe_allow_html=True)
+    
+    # ইন-ম্যাপ ভাসমান স্লাইডার
+    st.markdown('<div class="map-floating-slider">', unsafe_allow_html=True)
     sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
     beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড রাখা হলো
-        
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:
         if len(filtered_df) == 1:
             row = filtered_df.iloc[0]
@@ -537,6 +547,8 @@ if df is not None:
         # সার্চ না করা থাকলে ডিফল্ট বাংলাদেশ কেন্দ্রিক ম্যাপ দেখাবে
         default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
         st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
+
+    st.markdown('</div>', unsafe_allow_html=True) # map-wrapper close
 
 else:
     st.info("👈 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি।")

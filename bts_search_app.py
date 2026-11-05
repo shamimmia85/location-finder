@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট এবং নির্দিষ্ট মাপে রাখার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,19 +38,14 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* স্লাইডারটিকে ছোট ও নির্দিষ্ট বক্সে রাখার জন্য ফিক্সড উইথ */
-        .stSlider {
-            max-width: 350px !important;
-        }
-
-        .slider-container {
+        /* স্লাইডার বক্স স্টাইল */
+        .slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 6px 14px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            max-width: 360px;
+            padding: 8px 14px;
+            margin-top: 5px;
+            margin-bottom: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
@@ -372,11 +367,13 @@ if df is not None:
 
     st.markdown("---")
 
-    # স্লাইডার বক্স
-    st.markdown('<div class="slider-container">', unsafe_allow_html=True)
-    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
-    beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
-    st.markdown('</div>', unsafe_allow_html=True)
+    # 🟢 স্লাইডারটিকে সুনির্দিষ্ট ছোট কলামে রাখা হলো যাতে পুরো পেজ জুড়ে না ছড়ায়
+    col_s1, col_s2 = st.columns([1, 2])
+    with col_s1:
+        st.markdown('<div class="slider-box">', unsafe_allow_html=True)
+        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
+        beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:
@@ -428,7 +425,7 @@ if df is not None:
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
-                    # 🟢 স্ক্রিনশটের বক্সের মতো একদম সোজা এবং পরিষ্কার স্টাইল
+                    # 🟢 লেবেলটিকে একদম সোজা, পরিষ্কার ও প্রফেশনাল বক্স আকারে সেট করা হলো
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(

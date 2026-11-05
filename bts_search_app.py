@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট ও নির্দিষ্ট রাখার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট ও কম্প্যাক্ট করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,15 +38,15 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* স্লাইডার বক্সটিকে ছোট এবং সুন্দর করার জন্য */
-        .slider-wrapper {
+        /* আপনার দেওয়া লাল বক্সের মাপে স্লাইডারটি ছোট ও সুনির্দিষ্ট রাখা হলো */
+        .compact-slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 4px 14px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            max-width: 380px;
+            padding: 4px 12px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            max-width: 320px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
@@ -148,7 +148,6 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    # লেবেলটি ওয়েজের ভেতরে সঠিক স্থানে বসানোর জন্য দূরুত্ব ঠিক করা হলো
     label_dist = distance_meters * 0.45
     label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
@@ -369,13 +368,11 @@ if df is not None:
 
     st.markdown("---")
 
-    # 🟢 ছোট ও সুনির্দিষ্ট স্লাইডার বক্স (নির্দিষ্ট কলামে রাখা হয়েছে যাতে পুরো পেজ জুড়ে না থাকে)
-    col_w1, col_w2 = st.columns([1, 2])
-    with col_w1:
-        st.markdown('<div class="slider-wrapper">', unsafe_allow_html=True)
-        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
-        beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
-        st.markdown('</div>', unsafe_allow_html=True)
+    # 🟢 আপনার দেওয়া বক্সের মাপ অনুযায়ী স্লাইডারটি ছোট বক্সে রাখা হলো
+    st.markdown('<div class="compact-slider-box">', unsafe_allow_html=True)
+    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
+    beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:
@@ -392,7 +389,6 @@ if df is not None:
                     cell_val = clean_val(row.get(cell_col))
                     dir_val = clean_val(row.get(dir_col, '0'))
                     
-                    # লেবেল ফরম্যাট: LAC | Cell | Azimuth
                     label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                     lbl_lat, lbl_lon = lat_val, lon_val
@@ -420,16 +416,15 @@ if df is not None:
                     except Exception:
                         pass
 
-                    # পিন পয়েন্ট যাতে একদম সঠিক স্থানাঙ্কে (lat, lon) থাকে এবং শিফট না করে সেজন্য সঠিক অফসেট দেওয়া হলো
-                    pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
-                        <svg viewBox="0 0 384 512" width="32" height="42">
-                            <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
+                    # 🟢 পিন পয়েন্টটি যাতে আপনার মার্ক করা নির্দিষ্ট জায়গার ভেতরে নিখুঁতভাবে বসে, সেজন্য সঠিক অ্যাঙ্কর পয়েন্ট সেট করা হলো
+                    pin_html = f'''<div style="width:30px; height:40px; transform:translate(-50%, -100%);">
+                        <svg viewBox="0 0 384 512" width="30" height="40">
+                            <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                             <circle cx="192" cy="192" r="70" fill="#ffffff"/>
                         </svg>
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
-                    # লেবেল পিন পয়েন্টের ঠিক মাঝখানে বা ওয়েজের ভেতরে নিখুঁতভাবে বসানোর জন্য
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(
@@ -491,7 +486,7 @@ if df is not None:
                                     opacity=0.9
                                 ).add_to(m)
                                 folium.RegularPolygonMarker(
-                                    location=[target_lon, target_lat],
+                                    location=[target_lat, target_lon],
                                     fill_color="#FFD700",
                                     color="#FFD700",
                                     number_of_sides=3,
@@ -501,9 +496,9 @@ if df is not None:
                             except Exception:
                                 pass
 
-                            pin_html = f'''<div style="width:32px; height:42px; transform:translate(-50%, -100%);">
-                                <svg viewBox="0 0 384 512" width="32" height="42">
-                                    <path fill="{pin_color}" stroke="#ffffff" stroke-width="15" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
+                            pin_html = f'''<div style="width:30px; height:40px; transform:translate(-50%, -100%);">
+                                <svg viewBox="0 0 384 512" width="30" height="40">
+                                    <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                                     <circle cx="192" cy="192" r="70" fill="#ffffff"/>
                                 </svg>
                             </div>'''
@@ -542,7 +537,6 @@ if df is not None:
                 except Exception as e:
                     st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
     else:
-        # সার্চ না করা থাকলে ডিফল্ট বাংলাদেশ কেন্দ্রিক ম্যাপ দেখাবে
         default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
         st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
 

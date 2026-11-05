@@ -147,7 +147,8 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    label_dist = distance_meters * 0.45
+    # 🟢 পিন এবং লেখার দূরত্ব নিখুঁত রাখার জন্য মান বাড়িয়ে ০.৬৫ করা হলো (যাতে আপনার দেওয়া ছবির মতো দূরে থাকে)
+    label_dist = distance_meters * 0.65
     label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
@@ -367,7 +368,7 @@ if df is not None:
 
     st.markdown("---")
 
-    # 🟢 স্লাইডারটিকে সুনির্দিষ্ট ছোট কলামে রাখা হলো যাতে পুরো পেজ জুড়ে না ছড়ায়
+    # স্লাইডার কলাম বক্স
     col_s1, col_s2 = st.columns([1, 2])
     with col_s1:
         st.markdown('<div class="slider-box">', unsafe_allow_html=True)
@@ -425,12 +426,12 @@ if df is not None:
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
-                    # 🟢 লেবেলটিকে একদম সোজা, পরিষ্কার ও প্রফেশনাল বক্স আকারে সেট করা হলো
+                    # 🟢 লেখাটি পিন থেকে দূরে, সোজা ও প্রফেশনাল বক্স আকারে সেট করা হলো
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(
                             html=f'''<div style="font-size: 11pt; font-weight: 600; color: #000000; 
-                                    background-color: #ffffff; border: 1px solid #94a3b8; padding: 4px 10px; 
+                                    background-color: #ffffff; border: 1px solid #94a3b8; padding: 4px 12px; 
                                     border-radius: 6px; text-align: center; box-shadow: 0px 2px 4px rgba(0,0,0,0.2); 
                                     white-space: nowrap; writing-mode: horizontal-tb; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                         )
@@ -508,7 +509,7 @@ if df is not None:
                                 [lbl_lat, lbl_lon],
                                 icon=folium.DivIcon(
                                     html=f'''<div style="font-size: 11pt; font-weight: 600; color: #000000; 
-                                            background-color: #ffffff; border: 1px solid #94a3b8; padding: 4px 10px; 
+                                            background-color: #ffffff; border: 1px solid #94a3b8; padding: 4px 12px; 
                                             border-radius: 6px; text-align: center; box-shadow: 0px 2px 4px rgba(0,0,0,0.2); 
                                             white-space: nowrap; writing-mode: horizontal-tb; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                                 )

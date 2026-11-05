@@ -6,6 +6,7 @@ import pandas as pd
 import folium
 from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
+from streamlit_geolocation import streamlit_geolocation
 from math import radians, cos, sin, asin, sqrt
 
 # ১. পেজ কনফিগারেশন
@@ -16,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (নম্বার ইনপুটের প্লাস-মাইনাস বাটন লুকানোর জন্য সিএসএস যুক্ত করা হয়েছে)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,19 +39,17 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* st.number_input এর পাশের প্লাস-মাইনাস বাটন বা কন্ট্রোলগুলো হাইড করার জন্য */
+        /* st.number_input এর প্লাস-মাইনাস বাটন লুকানোর জন্য */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
         
-        /* Streamlit number input control buttons hide */
         [data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {
             display: none !important;
         }
 
-        /* স্লাইডার বক্স স্টাইল */
         .slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
@@ -164,6 +163,12 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
     return points, label_lat, label_lon, target_lat, target_lon
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
+    a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
+    return R * 2 * asin(sqrt(a))
 
 def clean_val(val):
     if pd.isna(val) or val is None or str(val).strip() == "":
@@ -361,6 +366,25 @@ if df is not None:
             lon_val_str = str(row.get(lon_col, 'N/A'))
             address_val = str(row.get(addr_col, 'N/A')) if addr_col else "N/A"
 
+            # লাইভ লোকেশন থেকে দূরত্ব ক্যালকুলেশন উইজেট
+            loc = streamlit_geolocation()
+            distance_text = ""
+            user_lat, user_lon = None, None
+
+            if loc and loc.get('latitude') and loc.get('longitude'):
+                user_lat = loc.get('latitude')
+                user_lon = loc.get('longitude')
+                try:
+                    target_lat_val = float(row.get(lat_col))
+                    target_lon_val = float(row.get(lon_col))
+                    dist_km = haversine(user_lat, user_lon, target_lat_val, target_lon_val)
+                    if dist_km < 1.0:
+                        distance_text = f" | 📍 **আপনার অবস্থান থেকে দূরত্ব:** {int(dist_km * 1000)} মিটার"
+                    else:
+                        distance_text = f" | 📍 **আপনার অবস্থান থেকে দূরত্ব:** {dist_km:.2f} কিমি"
+                except Exception:
+                    pass
+
             st.markdown(f"""
             <div class="site-card">
                 <div class="site-details-inline">
@@ -372,7 +396,7 @@ if df is not None:
                     <div><strong>Longitude:</strong> {lon_val_str}</div>
                 </div>
                 <div class="site-address-text">
-                    <strong>Site Address:</strong> {address_val}
+                    <strong>Site Address:</strong> {address_val} {distance_text}
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -429,6 +453,22 @@ if df is not None:
                     except Exception:
                         pass
 
+                    # যদি ব্রাউজার থেকে ইউজার লোকেশন পাওয়া যায়, তবে ম্যাপে ইউজারের লোকেশন পিন এবং লাইন যুক্ত করা হবে
+                    if 'user_lat' in locals() and user_lat and user_lon:
+                        folium.Marker(
+                            [user_lat, user_lon],
+                            popup="My Location",
+                            icon=folium.Icon(color="green", icon="user", prefix="fa")
+                        ).add_to(m)
+                        
+                        folium.PolyLine(
+                            locations=[[user_lat, user_lon], [lat_val, lon_val]],
+                            color="#28a745",
+                            weight=4,
+                            opacity=0.8,
+                            dash_array='5, 5'
+                        ).add_to(m)
+
                     pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
                         <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
@@ -461,12 +501,6 @@ if df is not None:
                     records = map_df.to_dict('records')
                     
                     if len(records) > 0:
-                        def haversine(lat1, lon1, lat2, lon2):
-                            R = 6371.0
-                            dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
-                            a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
-                            return R * 2 * asin(sqrt(a))
-
                         m = render_folium_map(records[0][lat_col], records[0][lon_col], zoom=14)
                         coords = []
                         all_bounds = []

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট এবং নির্দিষ্ট মাপে রাখার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -36,11 +36,6 @@ st.markdown("""
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
-        }
-
-        /* স্লাইডারটিকে ছোট ও নির্দিষ্ট বক্সে রাখার জন্য ফিক্সড উইথ */
-        .stSlider {
-            max-width: 350px !important;
         }
 
         .slider-container {
@@ -152,7 +147,8 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    label_dist = distance_meters * 0.45
+    # 🟢 লেবেলটি পিন থেকে আরও দূরে (০.৫৫ গুণ দূরত্বে) বসানোর জন্য সেট করা হলো যাতে পিন পরিষ্কার দেখা যায়
+    label_dist = distance_meters * 0.55
     label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
@@ -372,7 +368,7 @@ if df is not None:
 
     st.markdown("---")
 
-    # 🟢 স্লাইডারটিকে ছোট এবং সুনির্দিষ্ট কমপ্যাক্ট বক্সে রাখা হলো
+    # স্লাইডার বক্স
     st.markdown('<div class="slider-container">', unsafe_allow_html=True)
     sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
     beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
@@ -420,7 +416,6 @@ if df is not None:
                     except Exception:
                         pass
 
-                    # 🟢 পিন পয়েন্ট যাতে একদম সঠিক লোকেশনে (lat, lon) থাকে তার জন্য সঠিক অ্যাঙ্কর ও ট্রান্সফর্ম সেট করা হলো
                     pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
                         <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
@@ -429,6 +424,7 @@ if df is not None:
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
+                    # লেবেলটিকে পিন থেকে দূরে ওয়েজের ভেতরে বসানো হলো
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(

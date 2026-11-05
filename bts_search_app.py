@@ -38,6 +38,11 @@ st.markdown("""
             max-width: 100% !important;
         }
 
+        /* স্লাইডারটিকে ছোট ও নির্দিষ্ট বক্সে রাখার জন্য ফিক্সড উইথ */
+        .stSlider {
+            max-width: 350px !important;
+        }
+
         .slider-container {
             background-color: #1e293b;
             border: 1px solid #334155;
@@ -423,7 +428,7 @@ if df is not None:
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
-                    # 🟢 লেবেলটি এখন একদম সোজা বা খাড়া (Upright) ফরম্যাটে সেট করা হলো
+                    # 🟢 লেবেলটিকে একদম সোজা বা খাড়া (Upright) ফরম্যাটে নিশ্চিত করা হলো
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(

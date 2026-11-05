@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (স্লাইডার বক্স সুন্দর ও ছোট করার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস (মডার্ন ও কমপ্যাক্ট স্লাইডার ডিজাইন)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,21 +38,22 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        .tiny-slider-box {
-            background-color: #1e293b;
+        /* প্রফেশনাল ও ছোট কমপ্যাক্ট স্লাইডার কার্ড */
+        .pro-slider-container {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             border: 1px solid #334155;
-            border-radius: 6px;
-            padding: 4px 12px;
-            margin-top: 5px;
-            margin-bottom: 5px;
-            max-width: 450px;
-            margin-left: auto;
-            margin-right: auto;
+            border-radius: 10px;
+            padding: 8px 20px;
+            margin: 10px auto;
+            max-width: 400px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         .stSlider label {
-            font-size: 11px !important;
-            color: #cbd5e1 !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #38bdf8 !important;
+            letter-spacing: 0.5px;
         }
 
         .site-card {
@@ -84,7 +85,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।[cite: 10]")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -335,7 +336,7 @@ if df is not None:
     filtered_df = st.session_state.get('active_search_result', None)
 
     if filtered_df is not None and not filtered_df.empty:
-        st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
+        st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে![cite: 10]")
 
         if len(filtered_df) == 1:
             row = filtered_df.iloc[0]
@@ -365,9 +366,9 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে ছোট আকারে সেক্টর কাভারেজ স্লাইডার (সর্বোচ্চ মান 1500 মিটার এবং ডিফল্ট 600)
+    # 🟢 ম্যাপের ঠিক ওপরে প্রফেশনাল ও ছোট কমপ্যাক্ট স্লাইডার (সর্বোচ্চ মান 1500 মিটার এবং ডিফল্ট 600)
     st.markdown("---")
-    st.markdown('<div class="tiny-slider-box">', unsafe_allow_html=True)
+    st.markdown('<div class="pro-slider-container">', unsafe_allow_html=True)
     
     sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
     beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড রাখা হলো

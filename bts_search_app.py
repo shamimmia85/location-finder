@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস
+# ২. কাস্টম প্রফেশনাল সিএসএস (নম্বার ইনপুটের প্লাস-মাইনাস বাটন লুকানোর জন্য সিএসএস যুক্ত করা হয়েছে)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -36,6 +36,18 @@ st.markdown("""
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
+        }
+
+        /* st.number_input এর পাশের প্লাস-মাইনাস বাটন বা কন্ট্রোলগুলো হাইড করার জন্য */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* Streamlit number input control buttons hide */
+        [data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {
+            display: none !important;
         }
 
         /* স্লাইডার বক্স স্টাইল */
@@ -147,7 +159,6 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    # 🟢 পিন এবং লেখার দূরত্ব নিখুঁত রাখার জন্য মান বাড়িয়ে ০.৬৫ করা হলো (যাতে আপনার দেওয়া ছবির মতো দূরে থাকে)
     label_dist = distance_meters * 0.65
     label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
@@ -426,7 +437,6 @@ if df is not None:
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
-                    # 🟢 লেখাটি পিন থেকে দূরে, সোজা ও প্রফেশনাল বক্স আকারে সেট করা হলো
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস
+# ২. কাস্টম প্রফেশনাল সিএসএস (স্লাইডার ছোট এবং নির্দিষ্ট মাপে রাখার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -152,7 +152,7 @@ def create_sector_wedge(lat, lon, azimuth, distance_meters=600, beamwidth=90):
     target_lat = lat + ((distance_meters * math.cos(target_rad)) / 111320.0)
     target_lon = lon + ((distance_meters * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
-    label_dist = distance_meters * 0.55
+    label_dist = distance_meters * 0.45
     label_lat = lat + ((label_dist * math.cos(target_rad)) / 111320.0)
     label_lon = lon + ((label_dist * math.sin(target_rad)) / (111320.0 * math.cos(math.radians(lat))))
     
@@ -428,13 +428,13 @@ if df is not None:
                     </div>'''
                     folium.Marker([lat_val, lon_val], icon=folium.DivIcon(html=pin_html)).add_to(m)
                     
-                    # 🟢 লেবেলটিকে একদম সোজা বা খাড়া (Upright) ফরম্যাটে নিশ্চিত করা হলো
+                    # 🟢 স্ক্রিনশটের বক্সের মতো একদম সোজা এবং পরিষ্কার স্টাইল
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(
-                            html=f'''<div style="font-size: 11pt; font-weight: 700; color: #000; 
-                                    background-color: #ffffff; border: 1.5px solid #cbd5e1; padding: 4px 10px; 
-                                    border-radius: 6px; text-align: center; box-shadow: 0px 2px 6px rgba(0,0,0,0.3); 
+                            html=f'''<div style="font-size: 11pt; font-weight: 600; color: #000000; 
+                                    background-color: #ffffff; border: 1px solid #94a3b8; padding: 4px 10px; 
+                                    border-radius: 6px; text-align: center; box-shadow: 0px 2px 4px rgba(0,0,0,0.2); 
                                     white-space: nowrap; writing-mode: horizontal-tb; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                         )
                     ).add_to(m)
@@ -510,9 +510,9 @@ if df is not None:
                             folium.Marker(
                                 [lbl_lat, lbl_lon],
                                 icon=folium.DivIcon(
-                                    html=f'''<div style="font-size: 11pt; font-weight: 700; color: #000; 
-                                            background-color: #ffffff; border: 1.5px solid #cbd5e1; padding: 4px 10px; 
-                                            border-radius: 6px; text-align: center; box-shadow: 0px 2px 6px rgba(0,0,0,0.3); 
+                                    html=f'''<div style="font-size: 11pt; font-weight: 600; color: #000000; 
+                                            background-color: #ffffff; border: 1px solid #94a3b8; padding: 4px 10px; 
+                                            border-radius: 6px; text-align: center; box-shadow: 0px 2px 4px rgba(0,0,0,0.2); 
                                             white-space: nowrap; writing-mode: horizontal-tb; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                                 )
                             ).add_to(m)

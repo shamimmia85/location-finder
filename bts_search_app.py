@@ -38,13 +38,15 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* ছোট ও প্রফেশনাল স্লাইডার কার্ড */
-        .slider-card {
+        /* সুন্দর ও ছোট কমপ্যাক্ট স্লাইডার বক্স */
+        .compact-slider-container {
             background-color: #1e293b;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 4px 12px;
-            margin-bottom: 5px;
+            padding: 4px 14px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            max-width: 350px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
@@ -83,7 +85,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।[cite: 10]")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -334,7 +336,7 @@ if df is not None:
     filtered_df = st.session_state.get('active_search_result', None)
 
     if filtered_df is not None and not filtered_df.empty:
-        st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে![cite: 10]")
+        st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
 
         if len(filtered_df) == 1:
             row = filtered_df.iloc[0]
@@ -366,13 +368,11 @@ if df is not None:
 
     st.markdown("---")
 
-    # 🟢 কলাম ব্যবহার করে স্লাইডারটিকে ছোট এবং সুনির্দিষ্ট আকারে ম্যাপের ওপরে রাখা হলো
-    col_s1, col_s2, col_s3 = st.columns([1, 2, 1])
-    with col_s1:
-        st.markdown('<div class="slider-card">', unsafe_allow_html=True)
-        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
-        beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
-        st.markdown('</div>', unsafe_allow_html=True)
+    # 🟢 ছোট ও প্রফেশনাল স্লাইডার বক্স
+    st.markdown('<div class="compact-slider-container">', unsafe_allow_html=True)
+    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
+    beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:
@@ -388,7 +388,9 @@ if df is not None:
                     lac_val = clean_val(row.get(lac_col))
                     cell_val = clean_val(row.get(cell_col))
                     dir_val = clean_val(row.get(dir_col, '0'))
-                    label_text = f"LAC: {lac_val}<br>Cell: {cell_val}<br>Az: {dir_val}°"
+                    
+                    # 🟢 আপনার দেওয়া ২য় স্ক্রিনশটের ফরম্যাট অনুযায়ী লেবেল (LAC | Cell | Azimuth)
+                    label_text = f"{lac_val}|{cell_val}|{dir_val}°"
 
                     lbl_lat, lbl_lon = lat_val, lon_val
                     try:
@@ -425,9 +427,9 @@ if df is not None:
                     folium.Marker(
                         [lbl_lat, lbl_lon],
                         icon=folium.DivIcon(
-                            html=f'''<div style="font-size: 10pt; font-weight: 800; color: #fff; 
-                                    background-color: #0d1b2a; border: 2px solid #00a8e8; padding: 6px 10px; 
-                                    border-radius: 6px; text-align: left; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
+                            html=f'''<div style="font-size: 11pt; font-weight: 700; color: #000; 
+                                    background-color: #ffffff; border: 1.5px solid #cbd5e1; padding: 4px 8px; 
+                                    border-radius: 4px; text-align: center; box-shadow: 0px 2px 6px rgba(0,0,0,0.3); 
                                     white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                         )
                     ).add_to(m)
@@ -465,7 +467,9 @@ if df is not None:
                             m_lac = clean_val(row.get(lac_col))
                             m_cell = clean_val(row.get(cell_col))
                             m_dir = clean_val(row.get(dir_col, '0'))
-                            label_text = f"LAC: {m_lac}<br>Cell: {m_cell}<br>Az: {m_dir}°"
+                            
+                            # একাধিক সার্চের ক্ষেত্রেও একই ফরম্যাট
+                            label_text = f"{m_lac}|{m_cell}|{m_dir}°"
                             lbl_lat, lbl_lon = p_lat, p_lon
 
                             try:
@@ -502,9 +506,9 @@ if df is not None:
                             folium.Marker(
                                 [lbl_lat, lbl_lon],
                                 icon=folium.DivIcon(
-                                    html=f'''<div style="font-size: 10pt; font-weight: 800; color: #fff; 
-                                            background-color: #0d1b2a; border: 2px solid #00a8e8; padding: 6px 10px; 
-                                            border-radius: 6px; text-align: left; box-shadow: 0px 4px 8px rgba(0,0,0,0.5); 
+                                    html=f'''<div style="font-size: 11pt; font-weight: 700; color: #000; 
+                                            background-color: #ffffff; border: 1.5px solid #cbd5e1; padding: 4px 8px; 
+                                            border-radius: 4px; text-align: center; box-shadow: 0px 2px 6px rgba(0,0,0,0.3); 
                                             white-space: nowrap; transform: translate(-50%, -50%); display: inline-block;">{label_text}</div>'''
                                 )
                             ).add_to(m)

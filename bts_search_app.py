@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (স্লাইডার উইডথ ছোট ও কম্প্যাক্ট করার জন্য)
+# ২. কাস্টম সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,7 +38,6 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* স্লাইডারগুলোকে ছোট ও সুন্দর দেখানোর জন্য */
         .tiny-slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
@@ -85,7 +84,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।[cite: 10]")
+st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -366,15 +365,12 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে আরও ছোট আকারে পাশাপাশি স্লাইডার (Compact & Centered)
+    # 🟢 ম্যাপের ঠিক ওপরে শুধু সেক্টর কাভারেজ স্লাইডার (অ্যাঙ্গেল 90 এ ফিক্সড)
     st.markdown("---")
     st.markdown('<div class="tiny-slider-box">', unsafe_allow_html=True)
     
-    t_col1, t_col2 = st.columns(2)
-    with t_col1:
-        sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
-    with t_col2:
-        beam_angle = st.slider("সেক্টর অ্যাঙ্গেল (ডিগ্রি):", min_value=30, max_value=120, value=90, step=10, key="map_sec_ang")
+    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=2000, value=600, step=50, key="map_sec_rad")
+    beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড রাখা হলো
         
     st.markdown('</div>', unsafe_allow_html=True)
 

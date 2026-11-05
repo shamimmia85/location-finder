@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সিএসএস (ম্যাপের ঠিক ওপরে ছোট, সুন্দর ও কমপ্যাক্ট স্লাইডার ডিজাইনের জন্য)
+# ২. কাস্টম সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -36,29 +36,6 @@ st.markdown("""
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
-        }
-
-        /* ম্যাপের ঠিক ওপরে বসানোর জন্য পিন পয়েন্টেড মিনি বক্স */
-        .map-top-bar {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-bottom: none;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-            padding: 4px 12px;
-            max-width: 320px;
-            margin-bottom: -10px;
-            margin-left: 0px;
-            box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
-        }
-
-        .map-top-bar .stSlider label {
-            font-size: 11px !important;
-            font-weight: 600 !important;
-            color: #38bdf8 !important;
         }
 
         .site-card {
@@ -371,12 +348,11 @@ if df is not None:
             </div>
             """, unsafe_allow_html=True)
 
-    # 🟢 ম্যাপের ঠিক ওপরে বাম কোণায় সুন্দর ও ছোট কমপ্যাক্ট স্লাইডার বার
     st.markdown("---")
-    st.markdown('<div class="map-top-bar">', unsafe_allow_html=True)
-    sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
-    beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ফিক্সড মান (স্লাইডার বাদ দিয়ে স্থায়ীভাবে সেট করা হলো)
+    sector_radius = 600
+    beam_angle = 90
 
     # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:

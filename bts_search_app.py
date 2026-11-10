@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (টেক্সট এরিয়া প্যাডিং এবং হাইট ফিক্সড করার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,13 +38,12 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* Search text area padding & line height fix so text doesn't hide */
+        /* Search text area styling for larger box */
         textarea[data-baseweb="textarea"] {
-            height: auto !important;
-            min-height: 95px !important;
-            padding-top: 8px !important;
-            padding-bottom: 8px !important;
-            line-height: 1.5 !important;
+            min-height: 150px !important;
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
+            line-height: 1.6 !important;
             resize: vertical !important;
         }
 
@@ -236,7 +235,8 @@ if df is not None:
             method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
             selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-        search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=85)
+        # 🟢 সার্চ বক্সের উচ্চতা বড় করার জন্য height=150 সেট করা হয়েছে
+        search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=150)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
     if search_button:

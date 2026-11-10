@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস
+# ২. কাস্টম প্রফেশনাল সিএসএস (টেক্সট এরিয়া এন্টার দিলে বড় হওয়ার জন্য হাইট অটো ফিক্সড করা হয়েছে)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -36,6 +36,13 @@ st.markdown("""
             padding-top: 2rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
+        }
+
+        /* Search text area auto expand on multiple lines */
+        textarea[data-baseweb="textarea"] {
+            height: auto !important;
+            min-height: 68px !important;
+            resize: vertical !important;
         }
 
         .slider-box {
@@ -198,7 +205,7 @@ def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     folium.LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
-# ------------------ মূল সার্চ ড্যাশবোর্ড ইন্টারফেস (অর্ধেক পেজ বা কলাম আকারে) ------------------
+# ------------------ মূল সার্চ ড্যাশবোর্ড ইন্টারফেস ------------------
 if df is not None:
     col_names = df.columns.tolist()
 
@@ -212,7 +219,6 @@ if df is not None:
 
     st.subheader("Tower search")
     
-    # 🟢 সার্চ সেকশনটিকে স্ক্রিনের অর্ধেক অংশে সীমাবদ্ধ করার জন্য কলাম ব্যবহার করা হলো
     search_col, _ = st.columns([1, 1])
     
     with search_col:

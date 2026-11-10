@@ -38,16 +38,6 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        
-        [data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {
-            display: none !important;
-        }
-
         .slider-box {
             background-color: #1e293b;
             border: 1px solid #334155;
@@ -208,7 +198,7 @@ def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     folium.LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
-# ------------------ মূল সার্চ ইন্টারফেস ------------------
+# ------------------ মূল সার্চ ড্যাশবোর্ড ইন্টারফেস ------------------
 if df is not None:
     col_names = df.columns.tolist()
 
@@ -220,131 +210,86 @@ if df is not None:
     lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
-    tab1, tab2 = st.tabs(["🔍 Tower Search (Single)", "📑 Multiple Search (একাধিক সার্চ)"])
+    st.subheader("Tower search")
+    
+    scol1, scol2 = st.columns(2)
+    with scol1:
+        selected_provider = st.selectbox(
+            "Provider", 
+            ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
+            key="single_prov"
+        )
+    with scol2:
+        method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
+        selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-    with tab1:
-        p_col1, p_col2 = st.columns(2)
+    search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370 বা প্রতি লাইনে একটি করে)", key="search_text_input", height=90)
+    
+    search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-        with p_col1:
-            selected_provider = st.selectbox(
-                "Provider", 
-                ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
-                key="single_prov"
-            )
+    if search_button:
+        temp_df = df.copy()
 
-        with p_col2:
-            if selected_provider == "All Providers":
-                method_options = ["Lac & Cell", "BTS Address"]
-            else:
-                method_options = ["LAC", "Cell ID", "BTS Address"]
-                
-            selected_method = st.selectbox("Search Method", method_options, key="single_method")
+        if selected_provider != "All Providers":
+            prov_kw = {
+                "Grameenphone": ["gp", "grameen"],
+                "Robi And Airtel": ["robi", "airtel"],
+                "Banglalink": ["banglalink", "bl"],
+                "Teletalk": ["teletalk"]
+            }.get(selected_provider, [])
 
-        lac_val_in, cell_val_in, address_val_in = "", "", ""
-        
-        if selected_method == "Lac & Cell":
-            i_col1, i_col2 = st.columns(2)
-            with i_col1:
-                lac_num = st.number_input("LAC", value=None, step=1, format="%d", placeholder="LAC লিখুন", key="s_lac")
-                lac_val_in = str(int(lac_num)) if lac_num is not None else ""
-            with i_col2:
-                cell_num = st.number_input("Cell ID", value=None, step=1, format="%d", placeholder="CELL ID লিখুন", key="s_cell")
-                cell_val_in = str(int(cell_num)) if cell_num is not None else ""
-        elif selected_method == "LAC":
-            lac_num = st.number_input("LAC", value=None, step=1, format="%d", placeholder="LAC লিখুন", key="s_lac_only")
-            lac_val_in = str(int(lac_num)) if lac_num is not None else ""
-        elif selected_method == "Cell ID":
-            cell_num = st.number_input("CELL ID", value=None, step=1, format="%d", placeholder="CELL ID লিখুন", key="s_cell_only")
-            cell_val_in = str(int(cell_num)) if cell_num is not None else ""
-        elif selected_method == "BTS Address":
-            address_val_in = st.text_input("BTS Address", placeholder="ঠিকানা বা এলাকার নাম লিখুন", key="s_addr_only").strip()
+            pattern = "|".join(prov_kw)
+            temp_df = temp_df[temp_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
 
-        search_button = st.button("🔍 সার্চ করুন", type="primary", use_container_width=True, key="single_btn")
+        s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
+        s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
 
-        if search_button:
-            temp_df = df.copy()
-
-            if selected_provider != "All Providers":
-                prov_kw = {
-                    "Grameenphone": ["gp", "grameen"],
-                    "Robi And Airtel": ["robi", "airtel"],
-                    "Banglalink": ["banglalink", "bl"],
-                    "Teletalk": ["teletalk"]
-                }.get(selected_provider, [])
-
-                pattern = "|".join(prov_kw)
-                temp_df = temp_df[temp_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
-
-            s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
-            s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
-
+        cleaned_query = search_query.strip()
+        if cleaned_query:
             if selected_method == "Lac & Cell":
-                if lac_val_in and cell_val_in:
-                    l_clean = lac_val_in.replace('.0', '')
-                    c_clean = cell_val_in.replace('.0', '')
-                    temp_df = temp_df[(temp_df[s_lac] == l_clean) & (temp_df[s_cell] == c_clean)]
+                # মাল্টিলাইন বা স্পেস দিয়ে পেয়ার সার্চ হ্যান্ডেল করা
+                lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
+                pairs = []
+                for line in lines:
+                    parts = line.replace(',', ' ').split()
+                    if len(parts) >= 2:
+                        pairs.append((parts[0].replace('.0', ''), parts[1].replace('.0', '')))
+                
+                if pairs:
+                    conditions = pd.Series(False, index=temp_df.index)
+                    for l, c in pairs:
+                        conditions |= ((temp_df[s_lac] == l) & (temp_df[s_cell] == c))
+                    temp_df = temp_df[conditions]
                 else:
-                    st.warning("⚠️ LAC এবং CELL ID দুটিই দিন।")
-                    temp_df = pd.DataFrame()
+                    # যদি এক লাইনে একটি মাত্র পেয়ার বা স্পেস দিয়ে লেখা হয়
+                    parts = cleaned_query.replace(',', ' ').split()
+                    if len(parts) >= 2:
+                        l_clean = parts[0].replace('.0', '')
+                        c_clean = parts[1].replace('.0', '')
+                        temp_df = temp_df[(temp_df[s_lac] == l_clean) & (temp_df[s_cell] == c_clean)]
+                    else:
+                        st.warning("⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
+                        temp_df = pd.DataFrame()
+
             elif selected_method == "LAC":
-                if lac_val_in:
-                    l_clean = lac_val_in.replace('.0', '')
-                    temp_df = temp_df[temp_df[s_lac] == l_clean]
-                else:
-                    st.warning("⚠️ LAC প্রদান করুন।")
-                    temp_df = pd.DataFrame()
+                lacs = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
+                temp_df = temp_df[temp_df[s_lac].isin(lacs)]
+
             elif selected_method == "Cell ID":
-                if cell_val_in:
-                    c_clean = cell_val_in.replace('.0', '')
-                    temp_df = temp_df[temp_df[s_cell] == c_clean]
-                else:
-                    st.warning("⚠️ CELL ID প্রদান করুন।")
-                    temp_df = pd.DataFrame()
+                cells = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
+                temp_df = temp_df[temp_df[s_cell].isin(cells)]
+
             elif selected_method == "BTS Address":
-                if address_val_in and addr_col:
-                    temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(address_val_in.lower(), na=False)]
-                elif not addr_col:
+                if addr_col:
+                    temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(cleaned_query.lower(), na=False)]
+                else:
                     st.error("⚠️ ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
                     temp_df = pd.DataFrame()
-                else:
-                    st.warning("⚠️ ঠিকানা বা এলাকার নাম লিখুন।")
-                    temp_df = pd.DataFrame()
+        else:
+            st.warning("⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
+            temp_df = pd.DataFrame()
 
-            st.session_state['active_search_result'] = temp_df
-
-    with tab2:
-        col1, col2 = st.columns(2)
-        with col1: 
-            lac_list_input = st.text_area("LAC সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="24051, 24051", key="m_lac")
-        with col2: 
-            cell_list_input = st.text_area("CELL ID সমূহ (কমা দিয়ে লিখুন):", value="", placeholder="55408, 55409", key="m_cell")
-
-        multi_search_button = st.button("🔍 একাধিক সার্চ করুন", type="primary", use_container_width=True, key="multi_btn")
-
-        if multi_search_button:
-            lacs = [x.strip().replace('.0', '') for x in lac_list_input.split(",") if x.strip()]
-            cells = [x.strip().replace('.0', '') for x in cell_list_input.split(",") if x.strip()]
-
-            s_lac = '_search_lac' if '_search_lac' in df.columns else lac_col
-            s_cell = '_search_cell' if '_search_cell' in df.columns else cell_col
-
-            if lacs and cells:
-                if len(lacs) == len(cells):
-                    search_pairs = set(zip(lacs, cells))
-                    conditions = pd.Series(False, index=df.index)
-                    for l, c in search_pairs:
-                        conditions |= ((df[s_lac] == l) & (df[s_cell] == c))
-                    res_df = df[conditions]
-                else:
-                    res_df = df[(df[s_lac].isin(lacs)) & (df[s_cell].isin(cells))]
-            elif lacs:
-                res_df = df[df[s_lac].isin(lacs)]
-            elif cells:
-                res_df = df[df[s_cell].isin(cells)]
-            else:
-                res_df = pd.DataFrame()
-
-            st.session_state['active_search_result'] = res_df
+        st.session_state['active_search_result'] = temp_df
 
     # রেজাল্ট প্রদর্শন (যদি থাকে)
     filtered_df = st.session_state.get('active_search_result', None)
@@ -364,6 +309,7 @@ if df is not None:
             lon_val_str = str(row.get(lon_col, 'N/A'))
             address_val = str(row.get(addr_col, 'N/A')) if addr_col else "N/A"
 
+            # ইউজার লোকেশন ইনপুট অপশন (ব্রাউজার লোকেশন না থাকলে ম্যানুয়াল বা ডিফলต์)
             st.markdown(f"""
             <div class="site-card">
                 <div class="site-details-inline">
@@ -387,7 +333,7 @@ if df is not None:
     with col_s1:
         st.markdown('<div class="slider-box">', unsafe_allow_html=True)
         sector_radius = st.slider("সেক্টর কাভারেজ (মিটার):", min_value=100, max_value=1500, value=600, step=50, key="map_sec_rad")
-        beam_angle = 90  # সেক্টর অ্যাঙ্গেল স্থায়ীভাবে ৯০ ডিগ্রি ফিক্সড
+        beam_angle = 90  
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ম্যাপ রেন্ডারিং অংশ

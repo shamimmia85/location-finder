@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্ক্রোলবার রিমুভ এবং অটো গ্রো করার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস (স্ক্রোলবার পাকাপাকিভাবে রিমুভ এবং বক্স অটো বড় করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,13 +38,12 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* Remove scrollbar and make textarea auto expand */
+        /* Hide scrollbar completely and auto expand text area height */
         textarea[data-baseweb="textarea"] {
             overflow-y: hidden !important;
             overflow-x: hidden !important;
             height: auto !important;
-            min-height: 80px !important;
-            max-height: none !important;
+            min-height: 100px !important;
             resize: none !important;
             padding-top: 10px !important;
             padding-bottom: 10px !important;
@@ -239,10 +238,10 @@ if df is not None:
             method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
             selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-        # লাইনের সংখ্যার উপর ভিত্তি করে ডাইনামিক হাইট ক্যালকুলেশন (JS ছাড়া পাইথন লেভেলে অটো বড় হওয়ার জন্য)
+        # লাইনের সংখ্যার ওপর ভিত্তি করে ডাইনামিক হাইট সেট করা হলো যাতে এন্টার দিলে বক্স বড় হতে থাকে
         user_input_text = st.session_state.get('search_text_input', '')
-        line_count = max(3, user_input_text.count('\n') + 1)
-        dynamic_height = min(max(80, line_count * 28), 350)
+        line_count = max(4, user_input_text.count('\n') + 1)
+        dynamic_height = min(max(120, line_count * 28), 600)
 
         search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")

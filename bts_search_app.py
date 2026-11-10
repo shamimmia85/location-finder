@@ -38,11 +38,11 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* Search text area styling for larger box */
+        /* Search text area larger box styling */
         textarea[data-baseweb="textarea"] {
-            min-height: 150px !important;
-            padding-top: 10px !important;
-            padding-bottom: 10px !important;
+            min-height: 220px !important;
+            padding-top: 12px !important;
+            padding-bottom: 12px !important;
             line-height: 1.6 !important;
             resize: vertical !important;
         }
@@ -235,8 +235,8 @@ if df is not None:
             method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
             selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-        # 🟢 সার্চ বক্সের উচ্চতা বড় করার জন্য height=150 সেট করা হয়েছে
-        search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=150)
+        # 🟢 সার্চ বক্সের উচ্চতা বড় করার জন্য height=220 সেট করা হয়েছে
+        search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=220)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
     if search_button:

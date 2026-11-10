@@ -223,7 +223,8 @@ if df is not None:
         method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
         selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-    search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370 বা প্রতি লাইনে একটি করে)", key="search_text_input", height=90)
+    # 🟢 টেক্সট এরিয়ার উচ্চতা কমিয়ে ছোট করা হলো (height=68)
+    search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=68)
     
     search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
@@ -247,7 +248,6 @@ if df is not None:
         cleaned_query = search_query.strip()
         if cleaned_query:
             if selected_method == "Lac & Cell":
-                # মাল্টিলাইন বা স্পেস দিয়ে পেয়ার সার্চ হ্যান্ডেল করা
                 lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
                 pairs = []
                 for line in lines:
@@ -261,7 +261,6 @@ if df is not None:
                         conditions |= ((temp_df[s_lac] == l) & (temp_df[s_cell] == c))
                     temp_df = temp_df[conditions]
                 else:
-                    # যদি এক লাইনে একটি মাত্র পেয়ার বা স্পেস দিয়ে লেখা হয়
                     parts = cleaned_query.replace(',', ' ').split()
                     if len(parts) >= 2:
                         l_clean = parts[0].replace('.0', '')
@@ -309,7 +308,6 @@ if df is not None:
             lon_val_str = str(row.get(lon_col, 'N/A'))
             address_val = str(row.get(addr_col, 'N/A')) if addr_col else "N/A"
 
-            # ইউজার লোকেশন ইনপুট অপশন (ব্রাউজার লোকেশন না থাকলে ম্যানুয়াল বা ডিফলต์)
             st.markdown(f"""
             <div class="site-card">
                 <div class="site-details-inline">

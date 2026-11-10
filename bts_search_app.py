@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্ক্রোলবার পাকাপাকিভাবে রিমুভ এবং বক্স বড় করার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস (স্ক্রোলবার রিমুভ এবং বক্স বড় করার জন্য)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -239,12 +239,13 @@ if df is not None:
             method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
             selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-        # লাইনের সংখ্যার ওপর ভিত্তি করে ডাইনামিক হাইট আরও বাড়িয়ে দেওয়া হলো
+        # লাইনের সংখ্যার ওপর ভিত্তি করে ডাইনামিক হাইট ক্যালকুলেশন
         user_input_text = st.session_state.get('search_text_input', '')
         line_count = max(6, user_input_text.count('\n') + 1)
         dynamic_height = min(max(180, line_count * 30), 1000)
 
-        search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
+        # প্লেসহোল্ডার থেকে "CELL" লেখাটি রিমুভ করা হয়েছে
+        search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
     if search_button:

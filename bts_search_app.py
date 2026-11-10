@@ -198,7 +198,7 @@ def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     folium.LayerControl(position='topleft', collapsed=False).add_to(m)
     return m
 
-# ------------------ মূল সার্চ ড্যাশবোর্ড ইন্টারফেস ------------------
+# ------------------ মূল সার্চ ড্যাশবোর্ড ইন্টারফেস (অর্ধেক পেজ বা কলাম আকারে) ------------------
 if df is not None:
     col_names = df.columns.tolist()
 
@@ -212,21 +212,23 @@ if df is not None:
 
     st.subheader("Tower search")
     
-    scol1, scol2 = st.columns(2)
-    with scol1:
-        selected_provider = st.selectbox(
-            "Provider", 
-            ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
-            key="single_prov"
-        )
-    with scol2:
-        method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
-        selected_method = st.selectbox("Search method", method_options, key="single_method")
-
-    # 🟢 টেক্সট এরিয়ার উচ্চতা কমিয়ে ছোট করা হলো (height=68)
-    search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=68)
+    # 🟢 সার্চ সেকশনটিকে স্ক্রিনের অর্ধেক অংশে সীমাবদ্ধ করার জন্য কলাম ব্যবহার করা হলো
+    search_col, _ = st.columns([1, 1])
     
-    search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
+    with search_col:
+        scol1, scol2 = st.columns(2)
+        with scol1:
+            selected_provider = st.selectbox(
+                "Provider", 
+                ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
+                key="single_prov"
+            )
+        with scol2:
+            method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
+            selected_method = st.selectbox("Search method", method_options, key="single_method")
+
+        search_query = st.text_area("Search text", placeholder="LAC CELL or CELLID (যেমন: 30425 14370)", key="search_text_input", height=68)
+        search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
     if search_button:
         temp_df = df.copy()

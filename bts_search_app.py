@@ -353,7 +353,7 @@ if df is not None:
 
     # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:
-        if len(filtered_df) == 1:
+        if len(filtered_df == 1):
             row = filtered_df.iloc[0]
             lat, lon = row.get(lat_col), row.get(lon_col)
             if pd.notnull(lat) and pd.notnull(lon):
@@ -393,8 +393,8 @@ if df is not None:
                     except Exception:
                         pass
 
-                    # 🟢 পিন পয়েন্টটি একদম সঠিক কোণায় (Tip of the pin) বসানোর জন্য transform ঠিক করা হয়েছে
-                    pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
+                    # 🟢 পিন পয়েন্টের সঠিক এলাইনমেন্টের জন্য transform পারফেক্ট করা হয়েছে (translate(-50%, -100%) এর পরিবর্তে সঠিক পিক্সেল)
+                    pin_html = f'''<div style="width:28px; height:38px; transform:translate(-14px, -36px);">
                         <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                             <circle cx="192" cy="192" r="70" fill="#ffffff"/>
@@ -467,7 +467,7 @@ if df is not None:
                             except Exception:
                                 pass
 
-                            pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
+                            pin_html = f'''<div style="width:28px; height:38px; transform:translate(-14px, -36px);">
                                 <svg viewBox="0 0 384 512" width="28" height="38">
                                     <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                                     <circle cx="192" cy="192" r="70" fill="#ffffff"/>

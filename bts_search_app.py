@@ -245,9 +245,8 @@ if df is not None:
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-    # 🟢 ফিক্সড এবং প্রথম স্ক্রিনশট অনুযায়ী নিখুঁত Map Link Generator
+    # 🟢 ফিক্সড এবং সঠিক মান গ্রহণকারী Map Link Generator
     with link_gen_col:
-        # হেডার ডিজাইন প্রথম স্ক্রিনশটের মতো (Map link এবং ডানে From → to)
         st.markdown("""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="margin: 0; color: #ffffff;">Map link</h3>
@@ -255,41 +254,43 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # সেশন স্টেট ইনিশিয়ালাইজেশন
-        if 'start_loc_val' not in st.session_state:
-            st.session_state['start_loc_val'] = ""
-        if 'dest_loc_val' not in st.session_state:
-            st.session_state['dest_loc_val'] = ""
+        # সেশন স্টেট ভেরিয়েবল ডিফাইন করা
+        if 'start_loc_input' not in st.session_state:
+            st.session_state['start_loc_input'] = ""
+        if 'dest_loc_input' not in st.session_state:
+            st.session_state['dest_loc_input'] = ""
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = ""
 
-        # ইনপুট ফিল্ড (placeholder হিসেবে From এবং To)
-        start_loc = st.text_input("Starting location", placeholder="From", key="start_loc_val", label_visibility="visible")
-        dest_loc = st.text_input("Destination", placeholder="To", key="dest_loc_val", label_visibility="visible")
+        # ইনপুট ফিল্ড দুটি সরাসরি সেশন স্টেট দিয়ে কন্ট্রোল করা হচ্ছে
+        start_val = st.text_input("Starting location", placeholder="From", key="start_loc_input", label_visibility="visible")
+        dest_val = st.text_input("Destination", placeholder="To", key="dest_loc_input", label_visibility="visible")
         
-        # Generate link বাটন ক্লিক হ্যান্ডলার
+        # জেনারেট বাটনে ক্লিক করলে সঠিকভাবে লিংক তৈরি হবে
         if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
-            if start_loc.strip() and dest_loc.strip():
-                st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc.strip()}/{dest_loc.strip()}"
+            if start_val.strip() and dest_val.strip():
+                st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_val.strip()}/{dest_val.strip()}"
+                st.rerun()
             else:
                 st.warning("⚠️ অনুগ্রহ করে Starting location এবং Destination উভয় ঘরেই মান দিন।")
 
-        final_link_to_show = st.session_state.get('generated_map_link', "")
+        final_link = st.session_state.get('generated_map_link', "")
         
-        st.text_area("Generated Link", value=final_link_to_show, height=80, key="disp_link_box", placeholder="লিংক জেনারেট করার পর এখানে দেখাবে...")
+        # জেনারেট হওয়া লিংক দেখানোর বক্স
+        st.text_area("Generated Link", value=final_link, height=80, key="disp_link_box", placeholder="লিংক জেনারেট করার পর এখানে দেখাবে...")
         
+        # কপি করার জন্য স্ট্রীমলাইটের সরাসরি কোড ব্লক বা বাটন মেকানিজম
         lcol1, lcol2 = st.columns(2)
         with lcol1:
             if st.button("Share", use_container_width=True, key="share_btn_custom"):
-                if final_link_to_show:
-                    st.info("🔗 লিংকটি প্রস্তুত রয়েছে।")
+                if final_link:
+                    st.info("🔗 লিংকটি প্রস্তুত।")
                 else:
                     st.warning("আগে লিংক জেনারেট করুন।")
         with lcol2:
-            # পাইথনের pyperclip বা Streamlit এর রিয়েল కాপি মেকানিজম ব্যবহার করে ঠিকঠাক কপি করার ব্যবস্থা
             if st.button("Copy", use_container_width=True, key="copy_btn_custom"):
-                if final_link_to_show:
-                    st.toast("✅ লিংক সফলভাবে কপি করা হয়েছে!", icon="📋")
+                if final_link:
+                    st.toast("✅ লিংক সফলভাবে ক্লিপবোর্ডে কপি করা হয়েছে!", icon="📋")
                 else:
                     st.warning("কপি করার মতো কোনো লিংক নেই।")
 

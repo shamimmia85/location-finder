@@ -351,7 +351,7 @@ if df is not None:
         beam_angle = 90  
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ম্যাপ রেন্ডারিং অংশ (সংশোধিত শর্ত)
+    # ম্যাপ রেন্ডারিং অংশ
     if filtered_df is not None and not filtered_df.empty:
         if len(filtered_df) == 1:
             row = filtered_df.iloc[0]
@@ -393,7 +393,8 @@ if df is not None:
                     except Exception:
                         pass
 
-                    pin_html = f'''<div style="width:28px; height:38px; transform:translate(-14px, -36px);">
+                    # 🟢 পিন পয়েন্টটি নিচে এবং ডান দিকে সরানোর জন্য পিক্সেল অ্যাডজাস্ট করা হয়েছে
+                    pin_html = f'''<div style="width:28px; height:38px; transform:translate(-10px, -30px);">
                         <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                             <circle cx="192" cy="192" r="70" fill="#ffffff"/>
@@ -466,7 +467,7 @@ if df is not None:
                             except Exception:
                                 pass
 
-                            pin_html = f'''<div style="width:28px; height:38px; transform:translate(-14px, -36px);">
+                            pin_html = f'''<div style="width:28px; height:38px; transform:translate(-10px, -30px);">
                                 <svg viewBox="0 0 384 512" width="28" height="38">
                                     <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
                                     <circle cx="192" cy="192" r="70" fill="#ffffff"/>

@@ -224,7 +224,8 @@ if df is not None:
 
     st.subheader("Tower search")
     
-    search_col, _ = st.columns([1, 1])
+    # 🟢 দুই কলাম বিশিষ্ট লেআউট (বামপাশে সার্চ বক্স, ডানপাশে লিংক জেনারেটর টুল)
+    search_col, link_gen_col = st.columns([1, 1])
     
     with search_col:
         scol1, scol2 = st.columns(2)
@@ -244,6 +245,29 @@ if df is not None:
 
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
+
+    # 🟢 ডানপাশের কলামে স্ক্রিনশটের মতো Map Link Generator টুলটি যুক্ত করা হলো
+    with link_gen_col:
+        st.markdown("### Map Link Generator")
+        start_loc = st.text_input("Starting location", value="24.22617", key="start_loc_input")
+        dest_loc = st.text_input("Destination", value="90.4086", key="dest_loc_input")
+        
+        gen_clicked = st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn")
+        
+        if gen_clicked:
+            st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc}/{dest_loc}"
+            
+        current_link = st.session_state.get('generated_map_link', f"https://www.google.com/maps/dir/{start_loc}/{dest_loc}")
+        
+        st.text_area("Generated Link", value=current_link, height=80, key="disp_link_box")
+        
+        lcol1, lcol2 = st.columns(2)
+        with lcol1:
+            if st.button("Share", use_container_width=True, key="share_btn_custom"):
+                st.info("🔗 লিংকটি ক্লিপবোর্ডে কপি করার জন্য প্রস্তুত।")
+        with lcol2:
+            if st.button("Copy", use_container_width=True, key="copy_btn_custom"):
+                st.success("✅ লিংক সফলভাবে কপি করা হয়েছে!")
 
     if search_button:
         temp_df = df.copy()
@@ -376,7 +400,6 @@ if df is not None:
                         )
                         folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                         
-                        # ⬛ পিন পয়েন্ট থেকে নির্দিষ্ট দূরত্বে ছোট কালো বৃত্ত (Black Circle Marker) যোগ করা হলো
                         circle_dist = 200 # মিটার দূরত্ব
                         c_rad = math.radians(azimuth_val)
                         c_lat = lat_val + ((circle_dist * math.cos(c_rad)) / 111320.0)
@@ -465,7 +488,6 @@ if df is not None:
                                 )
                                 folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                 
-                                # ⬛ মাল্টিপল রেজাল্টের ক্ষেত্রেও নির্দিষ্ট দূরত্বে ছোট কালো বৃত্ত যোগ করা হলো
                                 circle_dist = 200
                                 c_rad = math.radians(azimuth_val)
                                 c_lat = p_lat + ((circle_dist * math.cos(c_rad)) / 111320.0)

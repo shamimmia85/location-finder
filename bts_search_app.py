@@ -181,7 +181,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '', regex=True)
 
-# ------------------ অটো ফাইল লোড (ফোল্ডার থেকে বয়স ও ডেটা) ------------------
+# ------------------ অটো ফাইল লোড (ফোল্ডার থেকে) ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
@@ -275,9 +275,6 @@ if df is not None:
         
         if final_link:
             st.code(final_link, language="text")
-            # সরাসরি এক ক্লিকে ক্লিপবোর্ডে কপি করার জন্য স্ট্রীমলাইটের কপি বাটন
-            if st.button("📋 Copy Link", use_container_width=True, key="copy_action_btn"):
-                st.toast("✅ লিংক সফলভাবে কপি করা হয়েছে!", icon="📋")
         else:
             st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")
 
@@ -467,7 +464,6 @@ if df is not None:
                 except ValueError:
                     st.error("Latitude/Longitude মান সঠিক নয়।")
         else:
-            # অতিরিক্ত সার্চ কলামগুলো (যেমন: _search_lac, _search_cell) বাদ দিয়ে শুধুমাত্র মূল কলামগুলো টেবিলে দেখানোর ব্যবস্থা
             display_cols = [c for c in filtered_df.columns if not c.startswith('_')]
             st.dataframe(filtered_df[display_cols], use_container_width=True)
             

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (স্ক্রোলবার রিমুভ এবং বক্স বড় করার জন্য)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -38,7 +38,6 @@ st.markdown("""
             max-width: 100% !important;
         }
 
-        /* Completely remove scrollbar and force auto expand */
         textarea[data-baseweb="textarea"] {
             overflow-y: hidden !important;
             overflow-x: hidden !important;
@@ -239,12 +238,10 @@ if df is not None:
             method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
             selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-        # লাইনের সংখ্যার ওপর ভিত্তি করে ডাইনামিক হাইট ক্যালকুলেশন
         user_input_text = st.session_state.get('search_text_input', '')
         line_count = max(6, user_input_text.count('\n') + 1)
         dynamic_height = min(max(180, line_count * 30), 1000)
 
-        # প্লেসহোল্ডার থেকে "CELL" লেখাটি রিমুভ করা হয়েছে
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
@@ -396,6 +393,7 @@ if df is not None:
                     except Exception:
                         pass
 
+                    # 🟢 পিন পয়েন্টটি একদম সঠিক কোণায় (Tip of the pin) বসানোর জন্য transform ঠিক করা হয়েছে
                     pin_html = f'''<div style="width:28px; height:38px; transform:translate(-50%, -100%);">
                         <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>

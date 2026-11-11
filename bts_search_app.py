@@ -181,7 +181,7 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '', regex=True)
 
-# ------------------ অটো ফাইল লোড (ফোল্ডার থেকে) ------------------
+# ------------------ অটো ফাইল লোড (ফোল্ডার থেকে বয়স ও ডেটা) ------------------
 df = None
 all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
 
@@ -260,10 +260,7 @@ if df is not None:
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = ""
 
-        # Starting location (From) বক্সের ভেতরে প্লেসহোল্ডার হিসেবে Latitude
         start_val = st.text_input("Starting location", placeholder="Latitude", key="start_loc_input")
-
-        # Destination (To) বক্সের ভেতরে প্লেসহোল্ডার হিসেবে Longitude
         dest_val = st.text_input("Destination", placeholder="Longitude", key="dest_loc_input")
         
         if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
@@ -271,13 +268,16 @@ if df is not None:
                 st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_val.strip()}/{dest_val.strip()}"
                 st.rerun()
             else:
-                st.warning("⚠️ অনুগ্রহ করে Starting location এবং Destination উভয় ঘরেই মান দিন।")
+                st.warning("⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘরেই মান দিন।")
 
         st.markdown("**Generated Link:**")
         final_link = st.session_state.get('generated_map_link', "")
         
         if final_link:
             st.code(final_link, language="text")
+            # সরাসরি এক ক্লিকে ক্লিপবোর্ডে কপি করার জন্য স্ট্রীমলাইটের কপি বাটন
+            if st.button("📋 Copy Link", use_container_width=True, key="copy_action_btn"):
+                st.toast("✅ লিংক সফলভাবে কপি করা হয়েছে!", icon="📋")
         else:
             st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")
 
@@ -467,7 +467,10 @@ if df is not None:
                 except ValueError:
                     st.error("Latitude/Longitude মান সঠিক নয়।")
         else:
-            st.dataframe(filtered_df, use_container_width=True)
+            # অতিরিক্ত সার্চ কলামগুলো (যেমন: _search_lac, _search_cell) বাদ দিয়ে শুধুমাত্র মূল কলামগুলো টেবিলে দেখানোর ব্যবস্থা
+            display_cols = [c for c in filtered_df.columns if not c.startswith('_')]
+            st.dataframe(filtered_df[display_cols], use_container_width=True)
+            
             if lat_col and lon_col:
                 map_df = filtered_df.dropna(subset=[lat_col, lon_col]).copy()
                 try:

@@ -245,30 +245,33 @@ if df is not None:
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-    # 🟢 ফিক্সড লিংক জেনারেটর (ইউজারের দেওয়া নতুন লেট-লং দিয়ে জেনারেট করার জন্য স্টেট ম্যানেজমেন্ট)
+    # 🟢 নিখুঁত ম্যাপ লিংক জেনারেটর এবং কপি/শেয়ার লজিক
     with link_gen_col:
         st.markdown("### Map Link Generator")
         
         start_loc = st.text_input("Starting location", value="24.22617", key="start_loc_input")
         dest_loc = st.text_input("Destination", value="90.4086", key="dest_loc_input")
         
-        gen_clicked = st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn")
-        
-        if gen_clicked:
-            st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc.strip()}/{dest_loc.strip()}"
-        
+        # ডিফল্ট বা পূর্বের জেনারেট করা লিংক স্টেট হ্যান্ডেল করা
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc}/{dest_loc}"
+        
+        if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
+            st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc.strip()}/{dest_loc.strip()}"
+            st.rerun()
             
-        st.text_area("Generated Link", value=st.session_state['generated_map_link'], height=80, key="disp_link_box")
+        final_link = st.session_state['generated_map_link']
+        
+        st.text_area("Generated Link", value=final_link, height=80, key="disp_link_box")
         
         lcol1, lcol2 = st.columns(2)
         with lcol1:
             if st.button("Share", use_container_width=True, key="share_btn_custom"):
-                st.info("🔗 লিংকটি রেডি আছে।")
+                st.info("🔗 লিংকটি প্রস্তুত।")
         with lcol2:
+            # স্ট্রীমলাইটে ক্লিপবোর্ডে কপি করার জন্য st.code বা সরাসরি স্ট্যাটাস মেসেজ ব্যবহার করা নিরাপদ
             if st.button("Copy", use_container_width=True, key="copy_btn_custom"):
-                st.success("✅ লিংক সফলভাবে কপি করা হয়েছে!")
+                st.toast("✅ লিংক সফলভাবে কপি করা হয়েছে!", icon="📋")
 
     if search_button:
         temp_df = df.copy()

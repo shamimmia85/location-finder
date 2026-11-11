@@ -88,6 +88,17 @@ st.markdown("""
             font-size: 17px;
             color: #1a1a1a;
         }
+        
+        .nearest-box {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
         iframe {
             width: 100% !important;
         }
@@ -373,6 +384,77 @@ if df is not None:
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+    # 🟢 নতুন যোগ করা হয়েছে: Nearest Towers সেকশন (কোম্পানি, রেডিয়্যাস, লেট ও লং দিয়ে সার্চ করার জন্য)
+    st.markdown("""
+        <div class="nearest-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #ffffff;">Nearest towers</h3>
+                <span style="color: #94a3b8; font-size: 14px;">Provider + radius + points</span>
+            </div>
+    """, unsafe_allow_html=True)
+
+    ncol1, ncol2 = st.columns(2)
+    with ncol1:
+        near_provider = st.selectbox(
+            "Provider", 
+            ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
+            key="nearest_prov_select"
+        )
+    with ncol2:
+        near_radius = st.number_input("Radius (km)", min_value=0.1, max_value=50.0, value=1.0, step=0.5, key="nearest_radius_input")
+
+    ncol3, ncol4 = st.columns(2)
+    with ncol3:
+        near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
+    with ncol4:
+        near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
+
+    locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Nearest towers সার্চ লজিক হ্যান্ডেল করার অংশ
+    if locate_btn:
+        if near_lat.strip() and near_lon.strip():
+            try:
+                target_lat = float(near_lat.strip())
+                target_lon = float(near_lon.strip())
+                
+                n_df = df.copy()
+                if near_provider != "All Providers":
+                    prov_kw = {
+                        "Grameenphone": ["gp", "grameen"],
+                        "Robi And Airtel": ["robi", "airtel"],
+                        "Banglalink": ["banglalink", "bl"],
+                        "Teletalk": ["teletalk"]
+                    }.get(near_provider, [])
+                    pattern = "|".join(prov_kw)
+                    n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
+                
+                # দূরত্ব ক্যালকুলেশন (Haversine Formula দিয়ে নির্দিষ্ট রেডিয়াসের ভেতরের টাওয়ার ফিল্টার করা)
+                valid_towers = []
+                if lat_col and lon_col:
+                    for idx, row in n_df.iterrows():
+                        try:
+                            lat_val = float(row[lat_col])
+                            lon_val = float(row[lon_col])
+                            dist_val = haversine(target_lat, target_lon, lat_val, lon_val)
+                            if dist_val <= near_radius:
+                                valid_towers.append(row)
+                        except Exception:
+                            continue
+                
+                if valid_towers:
+                    res_df = pd.DataFrame(valid_towers)
+                    st.session_state['active_search_result'] = res_df
+                    st.success(f"🎉 আপনার নির্ধারিত এলাকার মধ্যে মোট {len(res_df)} টি টাওয়ার পাওয়া গেছে!")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ এই রেডিয়াসের মধ্যে কোনো টাওয়ার পাওয়া যায়নি।")
+            except ValueError:
+                st.error("⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।")
+        else:
+            st.warning("⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।")
 
     st.markdown("---")
 

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস
+# ২. কাস্টম প্রফেশনাল সিএসএস (লেখার কাটা যাওয়ার সমস্যা সমাধানের জন্য padding-top বাড়ানো হয়েছে)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -33,7 +33,7 @@ st.markdown("""
         }
 
         .block-container {
-            padding-top: 2rem !important;
+            padding-top: 3.5rem !important;
             padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
@@ -89,24 +89,11 @@ st.markdown("""
             color: #1a1a1a;
         }
         
-        .nearest-box {
-            background-color: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        
         iframe {
             width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
-
-st.title("📡 Location Finder Dashboard")
-st.write("সহজ ও দ্রুত উপায়ে লাখ লাখ বিটিএস ডেটা থেকে অনুসন্ধান করুন।")
 
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
@@ -192,15 +179,25 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '', regex=True)
 
-# ------------------ অটো ফাইল লোড (ফোল্ডার থেকে) ------------------
+# ------------------ D ড্রাইভ এবং লোকাল ফোল্ডার থেকে ফাইল লোড ------------------
 df = None
-all_files = glob.glob("*.parquet") + glob.glob("*.csv") + glob.glob("*.xlsx") + glob.glob("*.xls")
+target_folders = [r"D:\AL company BTS Address", "."]
+
+all_files = []
+for folder in target_folders:
+    if os.path.exists(folder):
+        files = glob.glob(os.path.join(folder, "*.parquet")) + \
+                glob.glob(os.path.join(folder, "*.csv")) + \
+                glob.glob(os.path.join(folder, "*.xlsx"))
+        if files:
+            all_files = files
+            break
 
 if all_files:
     try:
         df = load_data_optimized(all_files[0])
-    except Exception:
-        pass
+    except Exception as e:
+        st.error(f"ডেটা ফাইল লোড করতে সমস্যা হয়েছে: {e}")
 
 def render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11):
     m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, max_zoom=21, tiles=None)
@@ -233,11 +230,11 @@ if df is not None:
     lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
-    st.subheader("Tower search")
+    # ১ম সারি: Tower search এবং Map link
+    col1, gap1, col2 = st.columns([1, 0.12, 1])
     
-    search_col, gap_col, link_gen_col = st.columns([1, 0.12, 1])
-    
-    with search_col:
+    with col1:
+        st.subheader("Tower search")
         scol1, scol2 = st.columns(2)
         with scol1:
             selected_provider = st.selectbox(
@@ -256,7 +253,7 @@ if df is not None:
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-    with link_gen_col:
+    with col2:
         st.markdown("""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="margin: 0; color: #ffffff;">Map link</h3>
@@ -289,6 +286,28 @@ if df is not None:
         else:
             st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")
 
+    st.markdown("---")
+
+    # ২য় সারি: Nearest towers
+    n_col1, n_gap, n_col2 = st.columns([1, 0.12, 1])
+
+    with n_col1:
+        st.subheader("Nearest towers")
+        near_provider = st.selectbox(
+            "Provider", 
+            ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
+            key="nearest_prov_select"
+        )
+        near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
+        near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
+        near_radius = st.number_input("Radius (km)", min_value=0.1, max_value=50.0, value=1.0, step=0.5, key="nearest_radius_input")
+        
+        locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
+
+    with n_col2:
+        pass
+
+    # Tower Search লজিক
     if search_button:
         temp_df = df.copy()
 
@@ -351,6 +370,47 @@ if df is not None:
 
         st.session_state['active_search_result'] = temp_df
 
+    # Nearest Towers সার্চ লজিক
+    if locate_btn:
+        if near_lat.strip() and near_lon.strip():
+            try:
+                target_lat = float(near_lat.strip())
+                target_lon = float(near_lon.strip())
+                
+                n_df = df.copy()
+                if near_provider != "All Providers":
+                    prov_kw = {
+                        "Grameenphone": ["gp", "grameen"],
+                        "Robi And Airtel": ["robi", "airtel"],
+                        "Banglalink": ["banglalink", "bl"],
+                        "Teletalk": ["teletalk"]
+                    }.get(near_provider, [])
+                    pattern = "|".join(prov_kw)
+                    n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
+                
+                valid_towers = []
+                if lat_col and lon_col:
+                    for idx, row in n_df.iterrows():
+                        try:
+                            lat_val = float(row[lat_col])
+                            lon_val = float(row[lon_col])
+                            dist_val = haversine(target_lat, target_lon, lat_val, lon_val)
+                            if dist_val <= near_radius:
+                                valid_towers.append(row)
+                        except Exception:
+                            continue
+                
+                if valid_towers:
+                    res_df = pd.DataFrame(valid_towers)
+                    st.session_state['active_search_result'] = res_df
+                    st.success(f"🎉 আপনার নির্ধারিত এলাকার {near_radius} কিঃমি এর মধ্যে মোট {len(res_df)} টি টাওয়ার পাওয়া গেছে!")
+                else:
+                    st.warning("⚠️ এই রেডিয়াসের মধ্যে কোনো টাওয়ার পাওয়া যায়নি।")
+            except ValueError:
+                st.error("⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।")
+        else:
+            st.warning("⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।")
+
     # রেজাল্ট প্রদর্শন (যদি থাকে)
     filtered_df = st.session_state.get('active_search_result', None)
 
@@ -384,77 +444,6 @@ if df is not None:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
-    # 🟢 নতুন যোগ করা হয়েছে: Nearest Towers সেকশন (কোম্পানি, রেডিয়্যাস, লেট ও লং দিয়ে সার্চ করার জন্য)
-    st.markdown("""
-        <div class="nearest-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: #ffffff;">Nearest towers</h3>
-                <span style="color: #94a3b8; font-size: 14px;">Provider + radius + points</span>
-            </div>
-    """, unsafe_allow_html=True)
-
-    ncol1, ncol2 = st.columns(2)
-    with ncol1:
-        near_provider = st.selectbox(
-            "Provider", 
-            ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
-            key="nearest_prov_select"
-        )
-    with ncol2:
-        near_radius = st.number_input("Radius (km)", min_value=0.1, max_value=50.0, value=1.0, step=0.5, key="nearest_radius_input")
-
-    ncol3, ncol4 = st.columns(2)
-    with ncol3:
-        near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
-    with ncol4:
-        near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
-
-    locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Nearest towers সার্চ লজিক হ্যান্ডেল করার অংশ
-    if locate_btn:
-        if near_lat.strip() and near_lon.strip():
-            try:
-                target_lat = float(near_lat.strip())
-                target_lon = float(near_lon.strip())
-                
-                n_df = df.copy()
-                if near_provider != "All Providers":
-                    prov_kw = {
-                        "Grameenphone": ["gp", "grameen"],
-                        "Robi And Airtel": ["robi", "airtel"],
-                        "Banglalink": ["banglalink", "bl"],
-                        "Teletalk": ["teletalk"]
-                    }.get(near_provider, [])
-                    pattern = "|".join(prov_kw)
-                    n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
-                
-                # দূরত্ব ক্যালকুলেশন (Haversine Formula দিয়ে নির্দিষ্ট রেডিয়াসের ভেতরের টাওয়ার ফিল্টার করা)
-                valid_towers = []
-                if lat_col and lon_col:
-                    for idx, row in n_df.iterrows():
-                        try:
-                            lat_val = float(row[lat_col])
-                            lon_val = float(row[lon_col])
-                            dist_val = haversine(target_lat, target_lon, lat_val, lon_val)
-                            if dist_val <= near_radius:
-                                valid_towers.append(row)
-                        except Exception:
-                            continue
-                
-                if valid_towers:
-                    res_df = pd.DataFrame(valid_towers)
-                    st.session_state['active_search_result'] = res_df
-                    st.success(f"🎉 আপনার নির্ধারিত এলাকার মধ্যে মোট {len(res_df)} টি টাওয়ার পাওয়া গেছে!")
-                    st.rerun()
-                else:
-                    st.warning("⚠️ এই রেডিয়াসের মধ্যে কোনো টাওয়ার পাওয়া যায়নি।")
-            except ValueError:
-                st.error("⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।")
-        else:
-            st.warning("⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।")
 
     st.markdown("---")
 
@@ -658,4 +647,4 @@ if df is not None:
         st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
 
 else:
-    st.info("👈 ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি।")
+    st.warning("⚠️ D ড্রাইভের 'AL company BTS Address' ফোল্ডারে বা লোকাল ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি। দয়া করে ফোল্ডার পাথ চেক করুন।")

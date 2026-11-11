@@ -245,7 +245,7 @@ if df is not None:
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-    # 🟢 ফিক্সড এবং সঠিক মান গ্রহণকারী Map Link Generator
+    # 🟢 ফিক্সড এবং নিখুঁত Map Link Generator (st.code ব্যবহার করায় কপি সমস্যা চিরতরে সমাধান)
     with link_gen_col:
         st.markdown("""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -254,7 +254,7 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # সেশন স্টেট ভেরিয়েবল ডিফাইন করা
+        # সেশন স্টেট ইনিশিয়ালাইজেশন
         if 'start_loc_input' not in st.session_state:
             st.session_state['start_loc_input'] = ""
         if 'dest_loc_input' not in st.session_state:
@@ -262,11 +262,10 @@ if df is not None:
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = ""
 
-        # ইনপুট ফিল্ড দুটি সরাসরি সেশন স্টেট দিয়ে কন্ট্রোল করা হচ্ছে
-        start_val = st.text_input("Starting location", placeholder="From", key="start_loc_input", label_visibility="visible")
-        dest_val = st.text_input("Destination", placeholder="To", key="dest_loc_input", label_visibility="visible")
+        start_val = st.text_input("Starting location", placeholder="From", key="start_loc_input")
+        dest_val = st.text_input("Destination", placeholder="To", key="dest_loc_input")
         
-        # জেনারেট বাটনে ক্লিক করলে সঠিকভাবে লিংক তৈরি হবে
+        # Generate link বাটন ক্লিক হ্যান্ডলার
         if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
             if start_val.strip() and dest_val.strip():
                 st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_val.strip()}/{dest_val.strip()}"
@@ -274,25 +273,14 @@ if df is not None:
             else:
                 st.warning("⚠️ অনুগ্রহ করে Starting location এবং Destination উভয় ঘরেই মান দিন।")
 
+        st.markdown("**Generated Link:**")
         final_link = st.session_state.get('generated_map_link', "")
         
-        # জেনারেট হওয়া লিংক দেখানোর বক্স
-        st.text_area("Generated Link", value=final_link, height=80, key="disp_link_box", placeholder="লিংক জেনারেট করার পর এখানে দেখাবে...")
-        
-        # কপি করার জন্য স্ট্রীমলাইটের সরাসরি কোড ব্লক বা বাটন মেকানিজম
-        lcol1, lcol2 = st.columns(2)
-        with lcol1:
-            if st.button("Share", use_container_width=True, key="share_btn_custom"):
-                if final_link:
-                    st.info("🔗 লিংকটি প্রস্তুত।")
-                else:
-                    st.warning("আগে লিংক জেনারেট করুন।")
-        with lcol2:
-            if st.button("Copy", use_container_width=True, key="copy_btn_custom"):
-                if final_link:
-                    st.toast("✅ লিংক সফলভাবে ক্লিপবোর্ডে কপি করা হয়েছে!", icon="📋")
-                else:
-                    st.warning("কপি করার মতো কোনো লিংক নেই।")
+        if final_link:
+            # st.code ব্যবহার করার ফলে এর ডানপাশে বিল্ট-इन কপি বাটন চলে আসবে যা ১০০% কাজ করবে
+            st.code(final_link, language="text")
+        else:
+            st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")
 
     if search_button:
         temp_df = df.copy()

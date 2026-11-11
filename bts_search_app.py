@@ -245,31 +245,33 @@ if df is not None:
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-    # 🟢 নিখুঁত ম্যাপ লিংক জেনারেটর এবং কপি/শেয়ার লজিক
+    # 🟢 ফিক্সড এবং নিখুঁত ম্যাপ লিংক জেনারেটর (ইনপুট পরিবর্তন সাপেক্ষে ডাইনামিক লিংক তৈরি)
     with link_gen_col:
         st.markdown("### Map Link Generator")
         
         start_loc = st.text_input("Starting location", value="24.22617", key="start_loc_input")
         dest_loc = st.text_input("Destination", value="90.4086", key="dest_loc_input")
         
-        # ডিফল্ট বা পূর্বের জেনারেট করা লিংক স্টেট হ্যান্ডেল করা
-        if 'generated_map_link' not in st.session_state:
-            st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc}/{dest_loc}"
+        gen_clicked = st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn")
         
-        if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
+        # জেনারেট বাটনে ক্লিক করলে অথবা প্রথম লোডে লাইভ ইনপুট ভ্যালু দিয়ে লিংক তৈরি হবে
+        if gen_clicked or 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_loc.strip()}/{dest_loc.strip()}"
-            st.rerun()
-            
-        final_link = st.session_state['generated_map_link']
         
-        st.text_area("Generated Link", value=final_link, height=80, key="disp_link_box")
+        # যদি ইউজার সরাসরি বক্সের মান পরিবর্তন করে কিন্তু জেনারেট না করে, তবুও যাতে বর্তমান মানটি ধরে রাখে
+        current_generated_link = f"https://www.google.com/maps/dir/{start_loc.strip()}/{dest_loc.strip()}"
+        if gen_clicked:
+            st.session_state['generated_map_link'] = current_generated_link
+
+        final_link_to_show = st.session_state.get('generated_map_link', current_generated_link)
+        
+        st.text_area("Generated Link", value=final_link_to_show, height=80, key="disp_link_box")
         
         lcol1, lcol2 = st.columns(2)
         with lcol1:
             if st.button("Share", use_container_width=True, key="share_btn_custom"):
-                st.info("🔗 লিংকটি প্রস্তুত।")
+                st.info("🔗 লিংকটি প্রস্তুত রয়েছে।")
         with lcol2:
-            # স্ট্রীমলাইটে ক্লিপবোর্ডে কপি করার জন্য st.code বা সরাসরি স্ট্যাটাস মেসেজ ব্যবহার করা নিরাপদ
             if st.button("Copy", use_container_width=True, key="copy_btn_custom"):
                 st.toast("✅ লিংক সফলভাবে কপি করা হয়েছে!", icon="📋")
 

@@ -376,6 +376,17 @@ if df is not None:
                         )
                         folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                         
+                        # 🔴 পিন পয়েন্টকে কেন্দ্র করে ২০০ মিটারের লাল বৃত্ত (Red Circle) যোগ করা হলো
+                        folium.Circle(
+                            location=[lat_val, lon_val],
+                            radius=200,  # ২০০ মিটার ব্যাসার্ধ
+                            color='#ff0000',
+                            weight=2,
+                            fill=True,
+                            fill_color='#ff0000',
+                            fill_opacity=0.15
+                        ).add_to(m)
+
                         folium.PolyLine(
                             locations=[[lat_val, lon_val], [target_lat, target_lon]],
                             color="#FFD700",
@@ -393,7 +404,6 @@ if df is not None:
                     except Exception:
                         pass
 
-                    # 🟢 পিন পয়েন্টটি নিচে এবং ডান দিকে সরানোর জন্য পিক্সেল অ্যাডজাস্ট করা হয়েছে
                     pin_html = f'''<div style="width:28px; height:38px; transform:translate(-10px, -30px);">
                         <svg viewBox="0 0 384 512" width="28" height="38">
                             <path fill="{pin_color}" stroke="#ffffff" stroke-width="12" d="M172.268 501.67 C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"/>
@@ -450,6 +460,17 @@ if df is not None:
                                 )
                                 folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                 
+                                # 🔴 মাল্টিপল সার্চ রেজাল্টের ক্ষেত্রেও প্রতিটি পিনের চারপাশে ২০০ মিটারের লাল বৃত্ত যোগ করা হলো
+                                folium.Circle(
+                                    location=[p_lat, p_lon],
+                                    radius=200,
+                                    color='#ff0000',
+                                    weight=2,
+                                    fill=True,
+                                    fill_color='#ff0000',
+                                    fill_opacity=0.15
+                                ).add_to(m)
+
                                 folium.PolyLine(
                                     locations=[[p_lat, p_lon], [target_lat, target_lon]],
                                     color="#FFD700",

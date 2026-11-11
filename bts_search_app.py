@@ -376,15 +376,20 @@ if df is not None:
                         )
                         folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                         
-                        # 🔴 পিন পয়েন্টকে কেন্দ্র করে ২০০ মিটারের লাল বৃত্ত (Red Circle) যোগ করা হলো
-                        folium.Circle(
-                            location=[lat_val, lon_val],
-                            radius=200,  # ২০০ মিটার ব্যাসার্ধ
+                        # 🔴 পিন পয়েন্ট থেকে নির্দিষ্ট দূরত্বে (যেমন ২০০ মিটার দূরে বা হলুদ লাইনের ওপর) ছোট লাল বৃত্ত যোগ করা হলো
+                        circle_dist = 200 # মিটার দূরত্ব
+                        c_rad = math.radians(azimuth_val)
+                        c_lat = lat_val + ((circle_dist * math.cos(c_rad)) / 111320.0)
+                        c_lon = lon_val + ((circle_dist * math.sin(c_rad)) / (111320.0 * math.cos(math.radians(lat_val))))
+
+                        folium.CircleMarker(
+                            location=[c_lat, c_lon],
+                            radius=8,
                             color='#ff0000',
                             weight=2,
                             fill=True,
                             fill_color='#ff0000',
-                            fill_opacity=0.15
+                            fill_opacity=0.8
                         ).add_to(m)
 
                         folium.PolyLine(
@@ -460,15 +465,20 @@ if df is not None:
                                 )
                                 folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                 
-                                # 🔴 মাল্টিপল সার্চ রেজাল্টের ক্ষেত্রেও প্রতিটি পিনের চারপাশে ২০০ মিটারের লাল বৃত্ত যোগ করা হলো
-                                folium.Circle(
-                                    location=[p_lat, p_lon],
-                                    radius=200,
+                                # 🔴 মাল্টিপল রেজাল্টের ক্ষেত্রেও নির্দিষ্ট দূরত্বে ছোট লাল বৃত্ত যোগ করা হলো
+                                circle_dist = 200
+                                c_rad = math.radians(azimuth_val)
+                                c_lat = p_lat + ((circle_dist * math.cos(c_rad)) / 111320.0)
+                                c_lon = p_lon + ((circle_dist * math.sin(c_rad)) / (111320.0 * math.cos(math.radians(p_lat))))
+
+                                folium.CircleMarker(
+                                    location=[c_lat, c_lon],
+                                    radius=8,
                                     color='#ff0000',
                                     weight=2,
                                     fill=True,
                                     fill_color='#ff0000',
-                                    fill_opacity=0.15
+                                    fill_opacity=0.8
                                 ).add_to(m)
 
                                 folium.PolyLine(

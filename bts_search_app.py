@@ -376,7 +376,7 @@ if df is not None:
                         )
                         folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                         
-                        # 🔴 পিন পয়েন্ট থেকে নির্দিষ্ট দূরত্বে (যেমন ২০০ মিটার দূরে বা হলুদ লাইনের ওপর) ছোট লাল বৃত্ত যোগ করা হলো
+                        # ⬛ পিন পয়েন্ট থেকে নির্দিষ্ট দূরত্বে ছোট কালো বৃত্ত (Black Circle Marker) যোগ করা হলো
                         circle_dist = 200 # মিটার দূরত্ব
                         c_rad = math.radians(azimuth_val)
                         c_lat = lat_val + ((circle_dist * math.cos(c_rad)) / 111320.0)
@@ -385,10 +385,10 @@ if df is not None:
                         folium.CircleMarker(
                             location=[c_lat, c_lon],
                             radius=8,
-                            color='#ff0000',
+                            color='#000000',
                             weight=2,
                             fill=True,
-                            fill_color='#ff0000',
+                            fill_color='#000000',
                             fill_opacity=0.8
                         ).add_to(m)
 
@@ -465,7 +465,7 @@ if df is not None:
                                 )
                                 folium.Polygon(locations=wedge_points, color=pin_color, weight=3, fill=True, fill_color=pin_color, fill_opacity=0.40).add_to(m)
                                 
-                                # 🔴 মাল্টিপল রেজাল্টের ক্ষেত্রেও নির্দিষ্ট দূরত্বে ছোট লাল বৃত্ত যোগ করা হলো
+                                # ⬛ মাল্টিপল রেজাল্টের ক্ষেত্রেও নির্দিষ্ট দূরত্বে ছোট কালো বৃত্ত যোগ করা হলো
                                 circle_dist = 200
                                 c_rad = math.radians(azimuth_val)
                                 c_lat = p_lat + ((circle_dist * math.cos(c_rad)) / 111320.0)
@@ -474,10 +474,10 @@ if df is not None:
                                 folium.CircleMarker(
                                     location=[c_lat, c_lon],
                                     radius=8,
-                                    color='#ff0000',
+                                    color='#000000',
                                     weight=2,
                                     fill=True,
-                                    fill_color='#ff0000',
+                                    fill_color='#000000',
                                     fill_opacity=0.8
                                 ).add_to(m)
 

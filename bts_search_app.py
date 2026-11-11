@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস
+# ২. কাস্টম প্রফেশনাল সিএসএস (দুটি কলামের মাঝে পর্যাপ্ত গ্যাপ রাখার জন্য মার্জিন অ্যাড করা হয়েছে)
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -224,7 +224,8 @@ if df is not None:
 
     st.subheader("Tower search")
     
-    search_col, link_gen_col = st.columns([1, 1])
+    # দুটি কলামের মাঝে গ্যাপ বড় করার জন্য [1, 0.1, 1] অনুপատ ব্যবহার করা হয়েছে (মাঝের কলামটি গ্যাপ হিসেবে কাজ করবে)
+    search_col, gap_col, link_gen_col = st.columns([1, 0.12, 1])
     
     with search_col:
         scol1, scol2 = st.columns(2)
@@ -245,7 +246,6 @@ if df is not None:
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-    # 🟢 ফিক্সড এবং নিখুঁত Map Link Generator (st.code ব্যবহার করায় কপি সমস্যা চিরতরে সমাধান)
     with link_gen_col:
         st.markdown("""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -254,7 +254,6 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # সেশন স্টেট ইনিশিয়ালাইজেশন
         if 'start_loc_input' not in st.session_state:
             st.session_state['start_loc_input'] = ""
         if 'dest_loc_input' not in st.session_state:
@@ -265,7 +264,6 @@ if df is not None:
         start_val = st.text_input("Starting location", placeholder="From", key="start_loc_input")
         dest_val = st.text_input("Destination", placeholder="To", key="dest_loc_input")
         
-        # Generate link বাটন ক্লিক হ্যান্ডলার
         if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
             if start_val.strip() and dest_val.strip():
                 st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_val.strip()}/{dest_val.strip()}"
@@ -277,7 +275,6 @@ if df is not None:
         final_link = st.session_state.get('generated_map_link', "")
         
         if final_link:
-            # st.code ব্যবহার করার ফলে এর ডানপাশে বিল্ট-इन কপি বাটন চলে আসবে যা ১০০% কাজ করবে
             st.code(final_link, language="text")
         else:
             st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")

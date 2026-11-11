@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (দুটি কলামের মাঝে পর্যাপ্ত গ্যাপ রাখার জন্য মার্জিন অ্যাড করা হয়েছে)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -224,7 +224,6 @@ if df is not None:
 
     st.subheader("Tower search")
     
-    # দুটি কলামের মাঝে গ্যাপ বড় করার জন্য [1, 0.1, 1] অনুপատ ব্যবহার করা হয়েছে (মাঝের কলামটি গ্যাপ হিসেবে কাজ করবে)
     search_col, gap_col, link_gen_col = st.columns([1, 0.12, 1])
     
     with search_col:
@@ -261,8 +260,13 @@ if df is not None:
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = ""
 
+        # Starting location (From) বক্স এবং নিচে Latitude লেবেল
         start_val = st.text_input("Starting location", placeholder="From", key="start_loc_input")
+        st.markdown('<p style="color: #94a3b8; font-size: 12px; margin-top: -12px; margin-bottom: 10px;">Latitude</p>', unsafe_allow_html=True)
+
+        # Destination (To) বক্স এবং নিচে Longitude লেবেল
         dest_val = st.text_input("Destination", placeholder="To", key="dest_loc_input")
+        st.markdown('<p style="color: #94a3b8; font-size: 12px; margin-top: -12px; margin-bottom: 10px;">Longitude</p>', unsafe_allow_html=True)
         
         if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
             if start_val.strip() and dest_val.strip():

@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস (লেখার কাটা যাওয়ার সমস্যা সমাধানের জন্য padding-top বাড়ানো হয়েছে)
+# ২. কাস্টম প্রফেশনাল সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -230,6 +230,9 @@ if df is not None:
     lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
+    if 'search_status_msg' not in st.session_state:
+        st.session_state['search_status_msg'] = None
+
     # ১ম সারি: Tower search এবং Map link
     col1, gap1, col2 = st.columns([1, 0.12, 1])
     
@@ -252,6 +255,97 @@ if df is not None:
 
         search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
         search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
+
+        # Tower Search লজিক
+        if search_button:
+            temp_df = df.copy()
+            valid_search = True
+
+            if selected_provider != "All Providers":
+                prov_kw = {
+                    "Grameenphone": ["gp", "grameen"],
+                    "Robi And Airtel": ["robi", "airtel"],
+                    "Banglalink": ["banglalink", "bl"],
+                    "Teletalk": ["teletalk"]
+                }.get(selected_provider, [])
+
+                pattern = "|".join(prov_kw)
+                temp_df = temp_df[temp_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
+
+            s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
+            s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
+
+            cleaned_query = search_query.strip()
+            if cleaned_query:
+                if selected_method == "Lac & Cell":
+                    lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
+                    pairs = []
+                    for line in lines:
+                        parts = line.replace(',', ' ').split()
+                        if len(parts) >= 2:
+                            pairs.append((parts[0].replace('.0', ''), parts[1].replace('.0', '')))
+                    
+                    if pairs:
+                        conditions = pd.Series(False, index=temp_df.index)
+                        for l, c in pairs:
+                            conditions |= ((temp_df[s_lac] == l) & (temp_df[s_cell] == c))
+                        temp_df = temp_df[conditions]
+                    else:
+                        parts = cleaned_query.replace(',', ' ').split()
+                        if len(parts) >= 2:
+                            l_clean = parts[0].replace('.0', '')
+                            c_clean = parts[1].replace('.0', '')
+                            temp_df = temp_df[(temp_df[s_lac] == l_clean) & (temp_df[s_cell] == c_clean)]
+                        else:
+                            valid_search = False
+                            temp_df = pd.DataFrame()
+                            st.session_state['search_status_msg'] = ("warning", "⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
+                            st.toast("⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন")
+
+                elif selected_method == "LAC":
+                    lacs = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
+                    temp_df = temp_df[temp_df[s_lac].isin(lacs)]
+
+                elif selected_method == "Cell ID":
+                    cells = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
+                    temp_df = temp_df[temp_df[s_cell].isin(cells)]
+
+                elif selected_method == "BTS Address":
+                    if addr_col:
+                        temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(cleaned_query.lower(), na=False)]
+                    else:
+                        valid_search = False
+                        temp_df = pd.DataFrame()
+                        st.session_state['search_status_msg'] = ("error", "❌ নট ফাউন্ড! ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
+                        st.toast("❌ নট ফাউন্ড!")
+            else:
+                valid_search = False
+                temp_df = pd.DataFrame()
+                st.session_state['search_status_msg'] = ("warning", "⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
+                st.toast("⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন")
+
+            st.session_state['active_search_result'] = temp_df
+
+            if valid_search:
+                if len(temp_df) > 0:
+                    msg = f"🎉 মোট {len(temp_df)} টি তথ্য পাওয়া গেছে!"
+                    st.session_state['search_status_msg'] = ("success", msg)
+                    st.toast(msg)
+                else:
+                    msg = "❌ নট ফাউন্ড!"
+                    st.session_state['search_status_msg'] = ("error", msg)
+                    st.toast(msg)
+
+        # সার্চ বাটনের ঠিক নিচেই রেজাল্ট কাউন্ট বা নট ফাউন্ড বার্তা দেখানো
+        status_data = st.session_state.get('search_status_msg')
+        if status_data:
+            status_type, status_text = status_data
+            if status_type == "success":
+                st.success(status_text)
+            elif status_type == "error":
+                st.error(status_text)
+            elif status_type == "warning":
+                st.warning(status_text)
 
     with col2:
         st.markdown("""
@@ -304,119 +398,63 @@ if df is not None:
         
         locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
 
+        # Nearest Towers সার্চ লজিক
+        if locate_btn:
+            if near_lat.strip() and near_lon.strip():
+                try:
+                    target_lat = float(near_lat.strip())
+                    target_lon = float(near_lon.strip())
+                    
+                    n_df = df.copy()
+                    if near_provider != "All Providers":
+                        prov_kw = {
+                            "Grameenphone": ["gp", "grameen"],
+                            "Robi And Airtel": ["robi", "airtel"],
+                            "Banglalink": ["banglalink", "bl"],
+                            "Teletalk": ["teletalk"]
+                        }.get(near_provider, [])
+                        pattern = "|".join(prov_kw)
+                        n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
+                    
+                    valid_towers = []
+                    if lat_col and lon_col:
+                        for idx, row in n_df.iterrows():
+                            try:
+                                lat_val = float(row[lat_col])
+                                lon_val = float(row[lon_col])
+                                dist_val = haversine(target_lat, target_lon, lat_val, lon_val)
+                                if dist_val <= near_radius:
+                                    valid_towers.append(row)
+                            except Exception:
+                                continue
+                    
+                    if valid_towers:
+                        res_df = pd.DataFrame(valid_towers)
+                        st.session_state['active_search_result'] = res_df
+                        msg = f"🎉 মোট {len(res_df)} টি তথ্য পাওয়া গেছে!"
+                        st.session_state['search_status_msg'] = ("success", msg)
+                        st.toast(msg)
+                    else:
+                        st.session_state['active_search_result'] = pd.DataFrame()
+                        msg = "❌ নট ফাউন্ড!"
+                        st.session_state['search_status_msg'] = ("error", msg)
+                        st.toast(msg)
+                except ValueError:
+                    msg = "⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।"
+                    st.session_state['search_status_msg'] = ("warning", msg)
+                    st.toast(msg)
+            else:
+                msg = "⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।"
+                st.session_state['search_status_msg'] = ("warning", msg)
+                st.toast(msg)
+
     with n_col2:
         pass
-
-    # Tower Search লজিক
-    if search_button:
-        temp_df = df.copy()
-
-        if selected_provider != "All Providers":
-            prov_kw = {
-                "Grameenphone": ["gp", "grameen"],
-                "Robi And Airtel": ["robi", "airtel"],
-                "Banglalink": ["banglalink", "bl"],
-                "Teletalk": ["teletalk"]
-            }.get(selected_provider, [])
-
-            pattern = "|".join(prov_kw)
-            temp_df = temp_df[temp_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
-
-        s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
-        s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
-
-        cleaned_query = search_query.strip()
-        if cleaned_query:
-            if selected_method == "Lac & Cell":
-                lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
-                pairs = []
-                for line in lines:
-                    parts = line.replace(',', ' ').split()
-                    if len(parts) >= 2:
-                        pairs.append((parts[0].replace('.0', ''), parts[1].replace('.0', '')))
-                
-                if pairs:
-                    conditions = pd.Series(False, index=temp_df.index)
-                    for l, c in pairs:
-                        conditions |= ((temp_df[s_lac] == l) & (temp_df[s_cell] == c))
-                    temp_df = temp_df[conditions]
-                else:
-                    parts = cleaned_query.replace(',', ' ').split()
-                    if len(parts) >= 2:
-                        l_clean = parts[0].replace('.0', '')
-                        c_clean = parts[1].replace('.0', '')
-                        temp_df = temp_df[(temp_df[s_lac] == l_clean) & (temp_df[s_cell] == c_clean)]
-                    else:
-                        st.warning("⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
-                        temp_df = pd.DataFrame()
-
-            elif selected_method == "LAC":
-                lacs = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
-                temp_df = temp_df[temp_df[s_lac].isin(lacs)]
-
-            elif selected_method == "Cell ID":
-                cells = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
-                temp_df = temp_df[temp_df[s_cell].isin(cells)]
-
-            elif selected_method == "BTS Address":
-                if addr_col:
-                    temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(cleaned_query.lower(), na=False)]
-                else:
-                    st.error("⚠️ ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
-                    temp_df = pd.DataFrame()
-        else:
-            st.warning("⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
-            temp_df = pd.DataFrame()
-
-        st.session_state['active_search_result'] = temp_df
-
-    # Nearest Towers সার্চ লজিক
-    if locate_btn:
-        if near_lat.strip() and near_lon.strip():
-            try:
-                target_lat = float(near_lat.strip())
-                target_lon = float(near_lon.strip())
-                
-                n_df = df.copy()
-                if near_provider != "All Providers":
-                    prov_kw = {
-                        "Grameenphone": ["gp", "grameen"],
-                        "Robi And Airtel": ["robi", "airtel"],
-                        "Banglalink": ["banglalink", "bl"],
-                        "Teletalk": ["teletalk"]
-                    }.get(near_provider, [])
-                    pattern = "|".join(prov_kw)
-                    n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
-                
-                valid_towers = []
-                if lat_col and lon_col:
-                    for idx, row in n_df.iterrows():
-                        try:
-                            lat_val = float(row[lat_col])
-                            lon_val = float(row[lon_col])
-                            dist_val = haversine(target_lat, target_lon, lat_val, lon_val)
-                            if dist_val <= near_radius:
-                                valid_towers.append(row)
-                        except Exception:
-                            continue
-                
-                if valid_towers:
-                    res_df = pd.DataFrame(valid_towers)
-                    st.session_state['active_search_result'] = res_df
-                    st.success(f"🎉 আপনার নির্ধারিত এলাকার {near_radius} কিঃমি এর মধ্যে মোট {len(res_df)} টি টাওয়ার পাওয়া গেছে!")
-                else:
-                    st.warning("⚠️ এই রেডিয়াসের মধ্যে কোনো টাওয়ার পাওয়া যায়নি।")
-            except ValueError:
-                st.error("⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।")
-        else:
-            st.warning("⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।")
 
     # রেজাল্ট প্রদর্শন (যদি থাকে)
     filtered_df = st.session_state.get('active_search_result', None)
 
     if filtered_df is not None and not filtered_df.empty:
-        st.success(f"🎉 মোট {len(filtered_df)} টি তথ্য পাওয়া গেছে!")
-
         if len(filtered_df) == 1:
             row = filtered_df.iloc[0]
             st.subheader("📌 বিটিএস সাইট বিস্তারিত (Site Details)")

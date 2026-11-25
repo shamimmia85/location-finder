@@ -179,6 +179,16 @@ def clean_val(val):
     except Exception:
         return str(val).replace('.0', '', regex=True)
 
+def show_status_box(status_data):
+    if status_data:
+        status_type, status_text = status_data
+        if status_type == "success":
+            st.success(status_text)
+        elif status_type == "error":
+            st.error(status_text)
+        elif status_type == "warning":
+            st.warning(status_text)
+
 # ------------------ D ড্রাইভ এবং লোকাল ফোল্ডার থেকে ফাইল লোড ------------------
 df = None
 target_folders = [r"D:\AL company BTS Address", "."]
@@ -230,8 +240,10 @@ if df is not None:
     lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
-    if 'search_status_msg' not in st.session_state:
-        st.session_state['search_status_msg'] = None
+    if 'tower_search_status' not in st.session_state:
+        st.session_state['tower_search_status'] = None
+    if 'nearest_search_status' not in st.session_state:
+        st.session_state['nearest_search_status'] = None
 
     # ১ম সারি: Tower search এবং Map link
     col1, gap1, col2 = st.columns([1, 0.12, 1])
@@ -258,6 +270,7 @@ if df is not None:
 
         # Tower Search লজিক
         if search_button:
+            st.session_state['nearest_search_status'] = None
             temp_df = df.copy()
             valid_search = True
 
@@ -299,7 +312,7 @@ if df is not None:
                         else:
                             valid_search = False
                             temp_df = pd.DataFrame()
-                            st.session_state['search_status_msg'] = ("warning", "⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
+                            st.session_state['tower_search_status'] = ("warning", "⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
                             st.toast("⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন")
 
                 elif selected_method == "LAC":
@@ -316,12 +329,12 @@ if df is not None:
                     else:
                         valid_search = False
                         temp_df = pd.DataFrame()
-                        st.session_state['search_status_msg'] = ("error", "❌ নট ফাউন্ড! ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
+                        st.session_state['tower_search_status'] = ("error", "❌ নট ফাউন্ড! ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
                         st.toast("❌ নট ফাউন্ড!")
             else:
                 valid_search = False
                 temp_df = pd.DataFrame()
-                st.session_state['search_status_msg'] = ("warning", "⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
+                st.session_state['tower_search_status'] = ("warning", "⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
                 st.toast("⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন")
 
             st.session_state['active_search_result'] = temp_df
@@ -329,23 +342,14 @@ if df is not None:
             if valid_search:
                 if len(temp_df) > 0:
                     msg = f"🎉 মোট {len(temp_df)} টি তথ্য পাওয়া গেছে!"
-                    st.session_state['search_status_msg'] = ("success", msg)
+                    st.session_state['tower_search_status'] = ("success", msg)
                     st.toast(msg)
                 else:
                     msg = "❌ নট ফাউন্ড!"
-                    st.session_state['search_status_msg'] = ("error", msg)
+                    st.session_state['tower_search_status'] = ("error", msg)
                     st.toast(msg)
 
-        # সার্চ বাটনের ঠিক নিচেই রেজাল্ট কাউন্ট বা নট ফাউন্ড বার্তা দেখানো
-        status_data = st.session_state.get('search_status_msg')
-        if status_data:
-            status_type, status_text = status_data
-            if status_type == "success":
-                st.success(status_text)
-            elif status_type == "error":
-                st.error(status_text)
-            elif status_type == "warning":
-                st.warning(status_text)
+        show_status_box(st.session_state.get('tower_search_status'))
 
     with col2:
         st.markdown("""
@@ -400,6 +404,7 @@ if df is not None:
 
         # Nearest Towers সার্চ লজিক
         if locate_btn:
+            st.session_state['tower_search_status'] = None
             if near_lat.strip() and near_lon.strip():
                 try:
                     target_lat = float(near_lat.strip())
@@ -432,21 +437,23 @@ if df is not None:
                         res_df = pd.DataFrame(valid_towers)
                         st.session_state['active_search_result'] = res_df
                         msg = f"🎉 মোট {len(res_df)} টি তথ্য পাওয়া গেছে!"
-                        st.session_state['search_status_msg'] = ("success", msg)
+                        st.session_state['nearest_search_status'] = ("success", msg)
                         st.toast(msg)
                     else:
                         st.session_state['active_search_result'] = pd.DataFrame()
                         msg = "❌ নট ফাউন্ড!"
-                        st.session_state['search_status_msg'] = ("error", msg)
+                        st.session_state['nearest_search_status'] = ("error", msg)
                         st.toast(msg)
                 except ValueError:
                     msg = "⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।"
-                    st.session_state['search_status_msg'] = ("warning", msg)
+                    st.session_state['nearest_search_status'] = ("warning", msg)
                     st.toast(msg)
             else:
                 msg = "⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।"
-                st.session_state['search_status_msg'] = ("warning", msg)
+                st.session_state['nearest_search_status'] = ("warning", msg)
                 st.toast(msg)
+
+        show_status_box(st.session_state.get('nearest_search_status'))
 
     with n_col2:
         pass

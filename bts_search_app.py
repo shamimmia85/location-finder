@@ -1,11 +1,13 @@
 import os
 import glob
 import math
+import numpy as np
 import streamlit as st
 import pandas as pd
 import folium
 from folium.plugins import Fullscreen
 from streamlit_folium import st_folium
+from streamlit.components.v1 import html as st_html
 from math import radians, cos, sin, asin, sqrt
 
 # ১. পেজ কনফিগারেশন
@@ -95,6 +97,29 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+def play_beep_sound():
+    beep_js = """
+    <script>
+    (function() {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+        } catch (e) {}
+    })();
+    </script>
+    """
+    st_html(beep_js, height=0, width=0)
+
 @st.cache_data(show_spinner="ডেটা প্রক্রিয়াকরণ হচ্ছে...")
 def load_data_optimized(file_or_path):
     filename = file_or_path if isinstance(file_or_path, str) else file_or_path.name
@@ -117,11 +142,16 @@ def load_data_optimized(file_or_path):
     
     lac_c = next((c for c in df.columns if 'lac' in c.lower()), None)
     cell_c = next((c for c in df.columns if 'cell' in c.lower()), None)
+    lat_c = next((c for c in df.columns if 'lat' in c.lower()), None)
+    lon_c = next((c for c in df.columns if 'lon' in c.lower() or 'lng' in c.lower()), None)
     
     if lac_c:
         df['_search_lac'] = df[lac_c].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
     if cell_c:
         df['_search_cell'] = df[cell_c].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+    if lat_c and lon_c:
+        df['_num_lat'] = pd.to_numeric(df[lat_c], errors='coerce')
+        df['_num_lon'] = pd.to_numeric(df[lon_c], errors='coerce')
         
     return df
 
@@ -167,6 +197,15 @@ def haversine(lat1, lon1, lat2, lon2):
     dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
     return R * 2 * asin(sqrt(a))
+
+def haversine_vectorized(lat1, lon1, lat2_arr, lon2_arr):
+    R = 6371.0
+    lat1_r, lon1_r = np.radians(lat1), np.radians(lon1)
+    lat2_r, lon2_r = np.radians(lat2_arr), np.radians(lon2_arr)
+    dlat = lat2_r - lat1_r
+    dlon = lon2_r - lon1_r
+    a = np.sin(dlat / 2.0)**2 + np.cos(lat1_r) * np.cos(lat2_r) * np.sin(dlon / 2.0)**2
+    return R * 2.0 * np.arcsin(np.minimum(1.0, np.sqrt(a)))
 
 def clean_val(val):
     if pd.isna(val) or val is None or str(val).strip() == "":
@@ -236,14 +275,16 @@ if df is not None:
     cell_col = next((c for c in col_names if 'cell' in c.lower() and c != '_search_cell'), col_names[0])
     provider_col = next((c for c in col_names if any(x in c.lower() for x in ['provider', 'operator', 'company'])), col_names[0])
     dir_col = next((c for c in col_names if 'dir' in c.lower()), None)
-    lat_col = next((c for c in col_names if 'lat' in c.lower()), None)
-    lon_col = next((c for c in col_names if 'lon' in c.lower() or 'lng' in c.lower()), None)
+    lat_col = next((c for c in col_names if 'lat' in c.lower() and c != '_num_lat'), None)
+    lon_col = next((c for c in col_names if ('lon' in c.lower() or 'lng' in c.lower()) and c != '_num_lon'), None)
     addr_col = next((c for c in col_names if any(x in c.lower() for x in ['address', 'site', 'location'])), None)
 
     if 'tower_search_status' not in st.session_state:
         st.session_state['tower_search_status'] = None
     if 'nearest_search_status' not in st.session_state:
         st.session_state['nearest_search_status'] = None
+
+    trigger_beep = False
 
     # ১ম সারি: Tower search এবং Map link
     col1, gap1, col2 = st.columns([1, 0.12, 1])
@@ -329,8 +370,9 @@ if df is not None:
                     else:
                         valid_search = False
                         temp_df = pd.DataFrame()
-                        st.session_state['tower_search_status'] = ("error", "❌ নট ফাউন্ড! ডেটাসেটে কোনো Address কলাম খুঁজে পাওয়া যায়নি।")
-                        st.toast("❌ নট ফাউন্ড!")
+                        st.session_state['tower_search_status'] = ("error", "❌ NOT FOUND")
+                        st.toast("❌ NOT FOUND")
+                        trigger_beep = True
             else:
                 valid_search = False
                 temp_df = pd.DataFrame()
@@ -345,9 +387,10 @@ if df is not None:
                     st.session_state['tower_search_status'] = ("success", msg)
                     st.toast(msg)
                 else:
-                    msg = "❌ নট ফাউন্ড!"
+                    msg = "❌ NOT FOUND"
                     st.session_state['tower_search_status'] = ("error", msg)
                     st.toast(msg)
+                    trigger_beep = True
 
         show_status_box(st.session_state.get('tower_search_status'))
 
@@ -402,7 +445,7 @@ if df is not None:
         
         locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
 
-        # Nearest Towers সার্চ লজিক
+        # Nearest Towers সার্চ লজিক (Bounding Box + NumPy Vectorized Haversine)
         if locate_btn:
             st.session_state['tower_search_status'] = None
             if near_lat.strip() and near_lon.strip():
@@ -410,7 +453,7 @@ if df is not None:
                     target_lat = float(near_lat.strip())
                     target_lon = float(near_lon.strip())
                     
-                    n_df = df.copy()
+                    n_df = df
                     if near_provider != "All Providers":
                         prov_kw = {
                             "Grameenphone": ["gp", "grameen"],
@@ -421,29 +464,38 @@ if df is not None:
                         pattern = "|".join(prov_kw)
                         n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
                     
-                    valid_towers = []
-                    if lat_col and lon_col:
-                        for idx, row in n_df.iterrows():
-                            try:
-                                lat_val = float(row[lat_col])
-                                lon_val = float(row[lon_col])
-                                dist_val = haversine(target_lat, target_lon, lat_val, lon_val)
-                                if dist_val <= near_radius:
-                                    valid_towers.append(row)
-                            except Exception:
-                                continue
+                    lat_s = n_df['_num_lat'] if '_num_lat' in n_df.columns else pd.to_numeric(n_df[lat_col], errors='coerce')
+                    lon_s = n_df['_num_lon'] if '_num_lon' in n_df.columns else pd.to_numeric(n_df[lon_col], errors='coerce')
+
+                    lat_delta = (near_radius / 111.0) * 1.1
+                    lon_delta = (near_radius / (111.0 * max(0.1, math.cos(math.radians(target_lat))))) * 1.1
+
+                    box_mask = (
+                        lat_s.notna() & lon_s.notna() &
+                        (lat_s >= target_lat - lat_delta) & (lat_s <= target_lat + lat_delta) &
+                        (lon_s >= target_lon - lon_delta) & (lon_s <= target_lon + lon_delta)
+                    )
+                    cand_df = n_df[box_mask]
+
+                    if not cand_df.empty:
+                        c_lats = lat_s[box_mask].to_numpy(dtype=np.float64)
+                        c_lons = lon_s[box_mask].to_numpy(dtype=np.float64)
+                        dists = haversine_vectorized(target_lat, target_lon, c_lats, c_lons)
+                        res_df = cand_df[dists <= near_radius]
+                    else:
+                        res_df = pd.DataFrame()
                     
-                    if valid_towers:
-                        res_df = pd.DataFrame(valid_towers)
+                    if not res_df.empty:
                         st.session_state['active_search_result'] = res_df
                         msg = f"🎉 মোট {len(res_df)} টি তথ্য পাওয়া গেছে!"
                         st.session_state['nearest_search_status'] = ("success", msg)
                         st.toast(msg)
                     else:
                         st.session_state['active_search_result'] = pd.DataFrame()
-                        msg = "❌ নট ফাউন্ড!"
+                        msg = "❌ NOT FOUND"
                         st.session_state['nearest_search_status'] = ("error", msg)
                         st.toast(msg)
+                        trigger_beep = True
                 except ValueError:
                     msg = "⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।"
                     st.session_state['nearest_search_status'] = ("warning", msg)
@@ -457,6 +509,9 @@ if df is not None:
 
     with n_col2:
         pass
+
+    if trigger_beep:
+        play_beep_sound()
 
     # রেজাল্ট প্রদর্শন (যদি থাকে)
     filtered_df = st.session_state.get('active_search_result', None)

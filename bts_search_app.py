@@ -409,7 +409,6 @@ if df is not None:
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = ""
 
-        # নতুন মডেল অনুযায়ী Starting location এবং Destination পাশাপাশি কলামে
         m_in1, m_in2 = st.columns(2)
         with m_in1:
             start_val = st.text_input("Starting location", placeholder="Latitude", key="start_loc_input")
@@ -443,8 +442,12 @@ if df is not None:
             ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
             key="nearest_prov_select"
         )
-        near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
-        near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
+        # Map link-এর মতো Latitude এবং Longitude পাশাপাশি কলামে
+        lat_col_box, lon_col_box = st.columns(2)
+        with lat_col_box:
+            near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
+        with lon_col_box:
+            near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
         near_radius = st.number_input("Radius (km)", min_value=0.1, max_value=50.0, value=1.0, step=0.5, key="nearest_radius_input")
         
         locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")

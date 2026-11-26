@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম পূর্ণাঙ্গ ব্যাকগ্রাউন্ড ও ফরমেট সিএসএস
+# ২. কাস্টম সুন্দর ব্যাকগ্রাউন্ড ও ফরমেট সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -35,26 +35,34 @@ st.markdown("""
         }
 
         .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-            background-color: #0f1116 !important;
+            background: linear-gradient(180deg, #0b0e14 0%, #101520 55%, #0c1018 100%) !important;
             color: #f1f5f9 !important;
         }
 
-        .block-container {
-            padding-top: 2.5rem !important;
-            padding-bottom: 2rem !important;
-            padding-left: 2.5rem !important;
-            padding-right: 2.5rem !important;
-            max-width: 100% !important;
-            background-color: #0f1116 !important;
+        [data-testid="stHeader"] {
+            background: transparent !important;
         }
 
-        .panel-card {
-            background-color: #14171f;
-            border: 1px solid #232836;
-            border-radius: 12px;
-            padding: 20px 22px;
-            margin-bottom: 18px;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        .block-container {
+            padding-top: 2.2rem !important;
+            padding-bottom: 2.5rem !important;
+            padding-left: 2.4rem !important;
+            padding-right: 2.4rem !important;
+            max-width: 100% !important;
+            background: transparent !important;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            background: linear-gradient(145deg, rgba(20, 25, 36, 0.94), rgba(15, 19, 28, 0.96)) !important;
+            border: 1px solid rgba(148, 163, 184, 0.14) !important;
+            border-radius: 14px !important;
+            padding: 18px 22px !important;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+        }
+
+        h2, h3 {
+            letter-spacing: -0.01em;
+            color: #f8fafc !important;
         }
 
         textarea[data-baseweb="textarea"] {
@@ -67,28 +75,33 @@ st.markdown("""
             padding-top: 12px !important;
             padding-bottom: 12px !important;
             line-height: 1.6 !important;
-            background-color: #1b1f29 !important;
+            background-color: rgba(24, 30, 43, 0.92) !important;
             color: #f8fafc !important;
-            border: 1px solid #2e3546 !important;
-            border-radius: 8px !important;
+            border: 1px solid rgba(148, 163, 184, 0.22) !important;
+            border-radius: 10px !important;
+        }
+
+        textarea[data-baseweb="textarea"]:focus {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18) !important;
         }
 
         div[data-baseweb="input"] > div,
         div[data-baseweb="select"] > div {
-            background-color: #1b1f29 !important;
-            border-color: #2e3546 !important;
+            background-color: rgba(24, 30, 43, 0.92) !important;
+            border-color: rgba(148, 163, 184, 0.22) !important;
             color: #f8fafc !important;
-            border-radius: 8px !important;
+            border-radius: 10px !important;
         }
 
         .slider-box {
-            background-color: #14171f;
-            border: 1px solid #232836;
-            border-radius: 10px;
+            background: linear-gradient(145deg, rgba(22, 28, 41, 0.95), rgba(16, 21, 31, 0.95));
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            border-radius: 12px;
             padding: 10px 16px;
             margin-top: 5px;
             margin-bottom: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
         }
 
         .stSlider label {
@@ -98,11 +111,12 @@ st.markdown("""
         }
 
         .site-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid #2563eb;
+            border-radius: 10px;
             padding: 14px 18px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
             margin-top: 5px;
             margin-bottom: 10px;
         }
@@ -112,17 +126,21 @@ st.markdown("""
             gap: 20px;
             align-items: center;
             font-size: 17px;
-            color: #1a1a1a;
+            color: #0f172a;
         }
         .site-address-text {
             margin-top: 10px;
             font-size: 17px;
-            color: #1a1a1a;
+            color: #0f172a;
+        }
+
+        hr {
+            border-color: rgba(148, 163, 184, 0.16) !important;
         }
         
         iframe {
             width: 100% !important;
-            border-radius: 10px;
+            border-radius: 12px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -316,234 +334,193 @@ if df is not None:
 
     trigger_beep = False
 
-    # মূল ২ কলাম: বামে Tower search, ডানে ওপরে Map link ও নিচে Nearest towers
+    # মূল ২ কলাম: বামে Tower search, ডানে Nearest towers
     left_col, gap_col, right_col = st.columns([1.05, 0.08, 1])
 
     with left_col:
-        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-        st.subheader("Tower search")
-        scol1, scol2 = st.columns(2)
-        with scol1:
-            selected_provider = st.selectbox(
-                "Provider", 
-                ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
-                key="single_prov"
-            )
-        with scol2:
-            method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
-            selected_method = st.selectbox("Search method", method_options, key="single_method")
+        with st.container(border=True):
+            st.subheader("Tower search")
+            scol1, scol2 = st.columns(2)
+            with scol1:
+                selected_provider = st.selectbox(
+                    "Provider", 
+                    ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
+                    key="single_prov"
+                )
+            with scol2:
+                method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
+                selected_method = st.selectbox("Search method", method_options, key="single_method")
 
-        user_input_text = st.session_state.get('search_text_input', '')
-        line_count = max(6, user_input_text.count('\n') + 1)
-        dynamic_height = min(max(180, line_count * 30), 1000)
+            user_input_text = st.session_state.get('search_text_input', '')
+            line_count = max(6, user_input_text.count('\n') + 1)
+            dynamic_height = min(max(180, line_count * 30), 1000)
 
-        search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
-        search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
+            search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
+            search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
-        # Tower Search লজিক
-        if search_button:
-            st.session_state['nearest_search_status'] = None
-            temp_df = df.copy()
-            valid_search = True
+            # Tower Search লজিক
+            if search_button:
+                st.session_state['nearest_search_status'] = None
+                temp_df = df.copy()
+                valid_search = True
 
-            if selected_provider != "All Providers":
-                prov_kw = {
-                    "Grameenphone": ["gp", "grameen"],
-                    "Robi And Airtel": ["robi", "airtel"],
-                    "Banglalink": ["banglalink", "bl"],
-                    "Teletalk": ["teletalk"]
-                }.get(selected_provider, [])
+                if selected_provider != "All Providers":
+                    prov_kw = {
+                        "Grameenphone": ["gp", "grameen"],
+                        "Robi And Airtel": ["robi", "airtel"],
+                        "Banglalink": ["banglalink", "bl"],
+                        "Teletalk": ["teletalk"]
+                    }.get(selected_provider, [])
 
-                pattern = "|".join(prov_kw)
-                temp_df = temp_df[temp_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
+                    pattern = "|".join(prov_kw)
+                    temp_df = temp_df[temp_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
 
-            s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
-            s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
+                s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
+                s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
 
-            cleaned_query = search_query.strip()
-            if cleaned_query:
-                if selected_method == "Lac & Cell":
-                    lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
-                    pairs = []
-                    for line in lines:
-                        parts = line.replace(',', ' ').split()
-                        if len(parts) >= 2:
-                            pairs.append((parts[0].replace('.0', ''), parts[1].replace('.0', '')))
-                    
-                    if pairs:
-                        conditions = pd.Series(False, index=temp_df.index)
-                        for l, c in pairs:
-                            conditions |= ((temp_df[s_lac] == l) & (temp_df[s_cell] == c))
-                        temp_df = temp_df[conditions]
-                    else:
-                        parts = cleaned_query.replace(',', ' ').split()
-                        if len(parts) >= 2:
-                            l_clean = parts[0].replace('.0', '')
-                            c_clean = parts[1].replace('.0', '')
-                            temp_df = temp_df[(temp_df[s_lac] == l_clean) & (temp_df[s_cell] == c_clean)]
+                cleaned_query = search_query.strip()
+                if cleaned_query:
+                    if selected_method == "Lac & Cell":
+                        lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
+                        pairs = []
+                        for line in lines:
+                            parts = line.replace(',', ' ').split()
+                            if len(parts) >= 2:
+                                pairs.append((parts[0].replace('.0', ''), parts[1].replace('.0', '')))
+                        
+                        if pairs:
+                            conditions = pd.Series(False, index=temp_df.index)
+                            for l, c in pairs:
+                                conditions |= ((temp_df[s_lac] == l) & (temp_df[s_cell] == c))
+                            temp_df = temp_df[conditions]
+                        else:
+                            parts = cleaned_query.replace(',', ' ').split()
+                            if len(parts) >= 2:
+                                l_clean = parts[0].replace('.0', '')
+                                c_clean = parts[1].replace('.0', '')
+                                temp_df = temp_df[(temp_df[s_lac] == l_clean) & (temp_df[s_cell] == c_clean)]
+                            else:
+                                valid_search = False
+                                temp_df = pd.DataFrame()
+                                st.session_state['tower_search_status'] = ("warning", "⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
+                                st.toast("⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন")
+
+                    elif selected_method == "LAC":
+                        lacs = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
+                        temp_df = temp_df[temp_df[s_lac].isin(lacs)]
+
+                    elif selected_method == "Cell ID":
+                        cells = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
+                        temp_df = temp_df[temp_df[s_cell].isin(cells)]
+
+                    elif selected_method == "BTS Address":
+                        if addr_col:
+                            temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(cleaned_query.lower(), na=False)]
                         else:
                             valid_search = False
                             temp_df = pd.DataFrame()
-                            st.session_state['tower_search_status'] = ("warning", "⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন (যেমন: 30425 14370)")
-                            st.toast("⚠️ সঠিক ফরম্যাটে LAC এবং Cell ID দিন")
-
-                elif selected_method == "LAC":
-                    lacs = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
-                    temp_df = temp_df[temp_df[s_lac].isin(lacs)]
-
-                elif selected_method == "Cell ID":
-                    cells = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
-                    temp_df = temp_df[temp_df[s_cell].isin(cells)]
-
-                elif selected_method == "BTS Address":
-                    if addr_col:
-                        temp_df = temp_df[temp_df[addr_col].astype(str).str.lower().str.contains(cleaned_query.lower(), na=False)]
-                    else:
-                        valid_search = False
-                        temp_df = pd.DataFrame()
-                        st.session_state['tower_search_status'] = ("error", "❌ NOT FOUND")
-                        st.toast("❌ NOT FOUND")
-                        trigger_beep = True
-            else:
-                valid_search = False
-                temp_df = pd.DataFrame()
-                st.session_state['tower_search_status'] = ("warning", "⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
-                st.toast("⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন")
-
-            st.session_state['active_search_result'] = temp_df
-
-            if valid_search:
-                if len(temp_df) > 0:
-                    msg = f"🎉 মোট {len(temp_df)} টি তথ্য পাওয়া গেছে!"
-                    st.session_state['tower_search_status'] = ("success", msg)
-                    st.toast(msg)
+                            st.session_state['tower_search_status'] = ("error", "❌ NOT FOUND")
+                            st.toast("❌ NOT FOUND")
+                            trigger_beep = True
                 else:
-                    msg = "❌ NOT FOUND"
-                    st.session_state['tower_search_status'] = ("error", msg)
-                    st.toast(msg)
-                    trigger_beep = True
+                    valid_search = False
+                    temp_df = pd.DataFrame()
+                    st.session_state['tower_search_status'] = ("warning", "⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন।")
+                    st.toast("⚠️ অনুগ্রহ করে সার্চ টেক্সট লিখুন")
 
-        show_status_box(st.session_state.get('tower_search_status'))
-        st.markdown('</div>', unsafe_allow_html=True)
+                st.session_state['active_search_result'] = temp_df
+
+                if valid_search:
+                    if len(temp_df) > 0:
+                        msg = f"🎉 মোট {len(temp_df)} টি তথ্য পাওয়া গেছে!"
+                        st.session_state['tower_search_status'] = ("success", msg)
+                        st.toast(msg)
+                    else:
+                        msg = "❌ NOT FOUND"
+                        st.session_state['tower_search_status'] = ("error", msg)
+                        st.toast(msg)
+                        trigger_beep = True
+
+            show_status_box(st.session_state.get('tower_search_status'))
 
     with right_col:
-        # ডানে ওপরে: Map link
-        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-        st.markdown("""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0; color: #ffffff;">Map link</h3>
-                <span style="color: #94a3b8; font-size: 14px;">From &rarr; to</span>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if 'start_loc_input' not in st.session_state:
-            st.session_state['start_loc_input'] = ""
-        if 'dest_loc_input' not in st.session_state:
-            st.session_state['dest_loc_input'] = ""
-        if 'generated_map_link' not in st.session_state:
-            st.session_state['generated_map_link'] = ""
+        with st.container(border=True):
+            st.subheader("Nearest towers")
+            near_provider = st.selectbox(
+                "Provider", 
+                ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
+                key="nearest_prov_select"
+            )
+            lat_col_box, lon_col_box = st.columns(2)
+            with lat_col_box:
+                near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
+            with lon_col_box:
+                near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
+            near_radius = st.number_input("Radius (km)", min_value=0.1, max_value=50.0, value=1.0, step=0.5, key="nearest_radius_input")
+            
+            locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
 
-        m_in1, m_in2 = st.columns(2)
-        with m_in1:
-            start_val = st.text_input("Starting location", placeholder="Latitude", key="start_loc_input")
-        with m_in2:
-            dest_val = st.text_input("Destination", placeholder="Longitude", key="dest_loc_input")
-        
-        if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
-            if start_val.strip() and dest_val.strip():
-                st.session_state['generated_map_link'] = f"https://www.google.com/maps/dir/{start_val.strip()}/{dest_val.strip()}"
-                st.rerun()
-            else:
-                st.warning("⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘরেই মান দিন।")
+            # Nearest Towers সার্চ লজিক (Bounding Box + NumPy Vectorized Haversine)
+            if locate_btn:
+                st.session_state['tower_search_status'] = None
+                if near_lat.strip() and near_lon.strip():
+                    try:
+                        target_lat = float(near_lat.strip())
+                        target_lon = float(near_lon.strip())
+                        
+                        n_df = df
+                        if near_provider != "All Providers":
+                            prov_kw = {
+                                "Grameenphone": ["gp", "grameen"],
+                                "Robi And Airtel": ["robi", "airtel"],
+                                "Banglalink": ["banglalink", "bl"],
+                                "Teletalk": ["teletalk"]
+                            }.get(near_provider, [])
+                            pattern = "|".join(prov_kw)
+                            n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
+                        
+                        lat_s = n_df['_num_lat'] if '_num_lat' in n_df.columns else pd.to_numeric(n_df[lat_col], errors='coerce')
+                        lon_s = n_df['_num_lon'] if '_num_lon' in n_df.columns else pd.to_numeric(n_df[lon_col], errors='coerce')
 
-        st.markdown("**Generated Link:**")
-        final_link = st.session_state.get('generated_map_link', "")
-        
-        if final_link:
-            st.code(final_link, language="text")
-        else:
-            st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")
-        st.markdown('</div>', unsafe_allow_html=True)
+                        lat_delta = (near_radius / 111.0) * 1.1
+                        lon_delta = (near_radius / (111.0 * max(0.1, math.cos(math.radians(target_lat))))) * 1.1
 
-        # ডানে নিচে: Nearest towers
-        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-        st.subheader("Nearest towers")
-        near_provider = st.selectbox(
-            "Provider", 
-            ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
-            key="nearest_prov_select"
-        )
-        lat_col_box, lon_col_box = st.columns(2)
-        with lat_col_box:
-            near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
-        with lon_col_box:
-            near_lon = st.text_input("Longitude", placeholder="Longitude", key="nearest_lon_input")
-        near_radius = st.number_input("Radius (km)", min_value=0.1, max_value=50.0, value=1.0, step=0.5, key="nearest_radius_input")
-        
-        locate_btn = st.button("Locate nearest towers", type="primary", use_container_width=True, key="locate_nearest_btn")
+                        box_mask = (
+                            lat_s.notna() & lon_s.notna() &
+                            (lat_s >= target_lat - lat_delta) & (lat_s <= target_lat + lat_delta) &
+                            (lon_s >= target_lon - lon_delta) & (lon_s <= target_lon + lon_delta)
+                        )
+                        cand_df = n_df[box_mask]
 
-        # Nearest Towers সার্চ লজিক (Bounding Box + NumPy Vectorized Haversine)
-        if locate_btn:
-            st.session_state['tower_search_status'] = None
-            if near_lat.strip() and near_lon.strip():
-                try:
-                    target_lat = float(near_lat.strip())
-                    target_lon = float(near_lon.strip())
-                    
-                    n_df = df
-                    if near_provider != "All Providers":
-                        prov_kw = {
-                            "Grameenphone": ["gp", "grameen"],
-                            "Robi And Airtel": ["robi", "airtel"],
-                            "Banglalink": ["banglalink", "bl"],
-                            "Teletalk": ["teletalk"]
-                        }.get(near_provider, [])
-                        pattern = "|".join(prov_kw)
-                        n_df = n_df[n_df[provider_col].astype(str).str.lower().str.contains(pattern, na=False)]
-                    
-                    lat_s = n_df['_num_lat'] if '_num_lat' in n_df.columns else pd.to_numeric(n_df[lat_col], errors='coerce')
-                    lon_s = n_df['_num_lon'] if '_num_lon' in n_df.columns else pd.to_numeric(n_df[lon_col], errors='coerce')
-
-                    lat_delta = (near_radius / 111.0) * 1.1
-                    lon_delta = (near_radius / (111.0 * max(0.1, math.cos(math.radians(target_lat))))) * 1.1
-
-                    box_mask = (
-                        lat_s.notna() & lon_s.notna() &
-                        (lat_s >= target_lat - lat_delta) & (lat_s <= target_lat + lat_delta) &
-                        (lon_s >= target_lon - lon_delta) & (lon_s <= target_lon + lon_delta)
-                    )
-                    cand_df = n_df[box_mask]
-
-                    if not cand_df.empty:
-                        c_lats = lat_s[box_mask].to_numpy(dtype=np.float64)
-                        c_lons = lon_s[box_mask].to_numpy(dtype=np.float64)
-                        dists = haversine_vectorized(target_lat, target_lon, c_lats, c_lons)
-                        res_df = cand_df[dists <= near_radius]
-                    else:
-                        res_df = pd.DataFrame()
-                    
-                    if not res_df.empty:
-                        st.session_state['active_search_result'] = res_df
-                        msg = f"🎉 মোট {len(res_df)} টি তথ্য পাওয়া গেছে!"
-                        st.session_state['nearest_search_status'] = ("success", msg)
+                        if not cand_df.empty:
+                            c_lats = lat_s[box_mask].to_numpy(dtype=np.float64)
+                            c_lons = lon_s[box_mask].to_numpy(dtype=np.float64)
+                            dists = haversine_vectorized(target_lat, target_lon, c_lats, c_lons)
+                            res_df = cand_df[dists <= near_radius]
+                        else:
+                            res_df = pd.DataFrame()
+                        
+                        if not res_df.empty:
+                            st.session_state['active_search_result'] = res_df
+                            msg = f"🎉 মোট {len(res_df)} টি তথ্য পাওয়া গেছে!"
+                            st.session_state['nearest_search_status'] = ("success", msg)
+                            st.toast(msg)
+                        else:
+                            st.session_state['active_search_result'] = pd.DataFrame()
+                            msg = "❌ NOT FOUND"
+                            st.session_state['nearest_search_status'] = ("error", msg)
+                            st.toast(msg)
+                            trigger_beep = True
+                    except ValueError:
+                        msg = "⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।"
+                        st.session_state['nearest_search_status'] = ("warning", msg)
                         st.toast(msg)
-                    else:
-                        st.session_state['active_search_result'] = pd.DataFrame()
-                        msg = "❌ NOT FOUND"
-                        st.session_state['nearest_search_status'] = ("error", msg)
-                        st.toast(msg)
-                        trigger_beep = True
-                except ValueError:
-                    msg = "⚠️ দয়া করে সঠিক সংখ্যায় Latitude এবং Longitude ইনপুট দিন।"
+                else:
+                    msg = "⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।"
                     st.session_state['nearest_search_status'] = ("warning", msg)
                     st.toast(msg)
-            else:
-                msg = "⚠️ অনুগ্রহ করে Latitude এবং Longitude উভয় ঘর পূরণ করুন।"
-                st.session_state['nearest_search_status'] = ("warning", msg)
-                st.toast(msg)
 
-        show_status_box(st.session_state.get('nearest_search_status'))
-        st.markdown('</div>', unsafe_allow_html=True)
+            show_status_box(st.session_state.get('nearest_search_status'))
 
     if trigger_beep:
         play_beep_sound()

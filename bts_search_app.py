@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম প্রফেশনাল সিএসএস
+# ২. কাস্টম পূর্ণাঙ্গ ব্যাকগ্রাউন্ড ও ফরমেট সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -34,10 +34,27 @@ st.markdown("""
             opacity: 0 !important;
         }
 
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+            background-color: #0f1116 !important;
+            color: #f1f5f9 !important;
+        }
+
         .block-container {
-            padding-top: 3.5rem !important;
-            padding-bottom: 1rem !important;
+            padding-top: 2.5rem !important;
+            padding-bottom: 2rem !important;
+            padding-left: 2.5rem !important;
+            padding-right: 2.5rem !important;
             max-width: 100% !important;
+            background-color: #0f1116 !important;
+        }
+
+        .panel-card {
+            background-color: #14171f;
+            border: 1px solid #232836;
+            border-radius: 12px;
+            padding: 20px 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
         }
 
         textarea[data-baseweb="textarea"] {
@@ -50,20 +67,32 @@ st.markdown("""
             padding-top: 12px !important;
             padding-bottom: 12px !important;
             line-height: 1.6 !important;
+            background-color: #1b1f29 !important;
+            color: #f8fafc !important;
+            border: 1px solid #2e3546 !important;
+            border-radius: 8px !important;
+        }
+
+        div[data-baseweb="input"] > div,
+        div[data-baseweb="select"] > div {
+            background-color: #1b1f29 !important;
+            border-color: #2e3546 !important;
+            color: #f8fafc !important;
+            border-radius: 8px !important;
         }
 
         .slider-box {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 8px 14px;
+            background-color: #14171f;
+            border: 1px solid #232836;
+            border-radius: 10px;
+            padding: 10px 16px;
             margin-top: 5px;
-            margin-bottom: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
         }
 
         .stSlider label {
-            font-size: 11px !important;
+            font-size: 12px !important;
             font-weight: 600 !important;
             color: #38bdf8 !important;
         }
@@ -73,7 +102,7 @@ st.markdown("""
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 14px 18px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
             margin-top: 5px;
             margin-bottom: 10px;
         }
@@ -93,6 +122,7 @@ st.markdown("""
         
         iframe {
             width: 100% !important;
+            border-radius: 10px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -286,10 +316,11 @@ if df is not None:
 
     trigger_beep = False
 
-    # ১ম সারি: Tower search এবং Map link
-    col1, gap1, col2 = st.columns([1, 0.12, 1])
-    
-    with col1:
+    # মূল ২ কলাম: বামে Tower search, ডানে ওপরে Map link ও নিচে Nearest towers
+    left_col, gap_col, right_col = st.columns([1.05, 0.08, 1])
+
+    with left_col:
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.subheader("Tower search")
         scol1, scol2 = st.columns(2)
         with scol1:
@@ -393,8 +424,11 @@ if df is not None:
                     trigger_beep = True
 
         show_status_box(st.session_state.get('tower_search_status'))
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    with col2:
+    with right_col:
+        # ডানে ওপরে: Map link
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("""
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="margin: 0; color: #ffffff;">Map link</h3>
@@ -429,20 +463,16 @@ if df is not None:
             st.code(final_link, language="text")
         else:
             st.info("লিংক জেনারেট করার পর এখানে প্রদর্শিত হবে...")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-
-    # ২য় সারি: Nearest towers
-    n_col1, n_gap, n_col2 = st.columns([1, 0.12, 1])
-
-    with n_col1:
+        # ডানে নিচে: Nearest towers
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.subheader("Nearest towers")
         near_provider = st.selectbox(
             "Provider", 
             ["All Providers", "Grameenphone", "Robi And Airtel", "Banglalink", "Teletalk"],
             key="nearest_prov_select"
         )
-        # Map link-এর মতো Latitude এবং Longitude পাশাপাশি কলামে
         lat_col_box, lon_col_box = st.columns(2)
         with lat_col_box:
             near_lat = st.text_input("Latitude", placeholder="Latitude", key="nearest_lat_input")
@@ -513,9 +543,7 @@ if df is not None:
                 st.toast(msg)
 
         show_status_box(st.session_state.get('nearest_search_status'))
-
-    with n_col2:
-        pass
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if trigger_beep:
         play_beep_sound()

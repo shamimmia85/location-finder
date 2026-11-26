@@ -354,14 +354,19 @@ if df is not None:
                     key="single_prov"
                 )
             with scol2:
-                method_options = ["Lac & Cell", "LAC", "Cell ID", "BTS Address"]
+                method_options = ["Lac & Cell", "LAC", "Cell ID", "Latitude & Longitude", "BTS Address"]
                 selected_method = st.selectbox("Search method", method_options, key="single_method")
 
             user_input_text = st.session_state.get('search_text_input', '')
             line_count = max(6, user_input_text.count('\n') + 1)
             dynamic_height = min(max(180, line_count * 30), 1000)
 
-            search_query = st.text_area("Search text", placeholder="LAC or CELLID (যেমন: 30425 14370)", key="search_text_input", height=dynamic_height)
+            placeholder_txt = (
+                "Latitude, Longitude (যেমন: 23.723100, 90.408600)"
+                if selected_method == "Latitude & Longitude"
+                else "LAC or CELLID (যেমন: 30425 14370)"
+            )
+            search_query = st.text_area("Search text", placeholder=placeholder_txt, key="search_text_input", height=dynamic_height)
             search_button = st.button("🔍 Search", type="primary", use_container_width=True, key="single_btn")
 
             # Tower Search লজিক
@@ -383,6 +388,8 @@ if df is not None:
 
                 s_lac = '_search_lac' if '_search_lac' in temp_df.columns else lac_col
                 s_cell = '_search_cell' if '_search_cell' in temp_df.columns else cell_col
+                s_lat = '_num_lat' if '_num_lat' in temp_df.columns else (lat_col if lat_col else None)
+                s_lon = '_num_lon' if '_num_lon' in temp_df.columns else (lon_col if lon_col else None)
 
                 cleaned_query = search_query.strip()
                 if cleaned_query:
@@ -418,6 +425,47 @@ if df is not None:
                     elif selected_method == "Cell ID":
                         cells = [x.strip().replace('.0', '') for x in cleaned_query.replace(',', '\n').split('\n') if x.strip()]
                         temp_df = temp_df[temp_df[s_cell].isin(cells)]
+
+                    elif selected_method == "Latitude & Longitude":
+                        if s_lat and s_lon:
+                            lines = [line.strip() for line in cleaned_query.split('\n') if line.strip()]
+                            coord_pairs = []
+                            parse_ok = True
+                            for line in lines:
+                                parts = line.replace(',', ' ').split()
+                                if len(parts) >= 2:
+                                    try:
+                                        coord_pairs.append((float(parts[0]), float(parts[1])))
+                                    except ValueError:
+                                        parse_ok = False
+                                        break
+                                else:
+                                    parse_ok = False
+                                    break
+
+                            if parse_ok and coord_pairs:
+                                lat_num = pd.to_numeric(temp_df[s_lat], errors='coerce')
+                                lon_num = pd.to_numeric(temp_df[s_lon], errors='coerce')
+                                tol = 1e-5
+                                conditions = pd.Series(False, index=temp_df.index)
+                                for q_lat, q_lon in coord_pairs:
+                                    conditions |= (
+                                        lat_num.notna() & lon_num.notna() &
+                                        ((lat_num - q_lat).abs() <= tol) &
+                                        ((lon_num - q_lon).abs() <= tol)
+                                    )
+                                temp_df = temp_df[conditions]
+                            else:
+                                valid_search = False
+                                temp_df = pd.DataFrame()
+                                st.session_state['tower_search_status'] = ("warning", "⚠️ সঠিক ফরম্যাটে Latitude এবং Longitude দিন (যেমন: 23.723100, 90.408600)")
+                                st.toast("⚠️ সঠিক Latitude এবং Longitude দিন")
+                        else:
+                            valid_search = False
+                            temp_df = pd.DataFrame()
+                            st.session_state['tower_search_status'] = ("error", "❌ NOT FOUND")
+                            st.toast("❌ NOT FOUND")
+                            trigger_beep = True
 
                     elif selected_method == "BTS Address":
                         if addr_col:

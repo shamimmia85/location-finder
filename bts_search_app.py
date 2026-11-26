@@ -409,8 +409,12 @@ if df is not None:
         if 'generated_map_link' not in st.session_state:
             st.session_state['generated_map_link'] = ""
 
-        start_val = st.text_input("Starting location", placeholder="Latitude", key="start_loc_input")
-        dest_val = st.text_input("Destination", placeholder="Longitude", key="dest_loc_input")
+        # নতুন মডেল অনুযায়ী Starting location এবং Destination পাশাপাশি কলামে
+        m_in1, m_in2 = st.columns(2)
+        with m_in1:
+            start_val = st.text_input("Starting location", placeholder="Latitude", key="start_loc_input")
+        with m_in2:
+            dest_val = st.text_input("Destination", placeholder="Longitude", key="dest_loc_input")
         
         if st.button("✈️ Generate link", type="primary", use_container_width=True, key="gen_link_btn"):
             if start_val.strip() and dest_val.strip():

@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ২. কাস্টম সুন্দর ব্যাকগ্রাউন্ড ও ফরমেট সিএসএস
+# ২. কাস্টম সুন্দর ব্যাকগ্রাউন্ড, স্মুথ লোডিং ও ফরমেট সিএসএস
 st.markdown("""
     <style>
         [data-testid="stSidebar"] {
@@ -50,6 +50,12 @@ st.markdown("""
             padding-right: 2.4rem !important;
             max-width: 100% !important;
             background: transparent !important;
+        }
+
+        /* লোডিং ও re-run চলাকালীন ঝাপসা/ফেড হওয়া কমাতে */
+        .element-container, [data-testid="stDataFrame"], .stMarkdown {
+            opacity: 1 !important;
+            transition: none !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -642,7 +648,7 @@ if df is not None:
                         )
                     ).add_to(m)
                     
-                    st_folium(m, use_container_width=True, height=550, key="map_single")
+                    st_folium(m, use_container_width=True, height=550, key="map_single", returned_objects=[])
                     st.markdown(f"### [🔗 Google map link](https://www.google.com/maps?q={lat_val},{lon_val})")
                 except ValueError:
                     st.error("Latitude/Longitude মান সঠিক নয়।")
@@ -751,12 +757,12 @@ if df is not None:
                         if len(all_bounds) > 1:
                             m.fit_bounds(all_bounds, padding=[80, 80])
 
-                        st_folium(m, use_container_width=True, height=550, key="map_multi")
+                        st_folium(m, use_container_width=True, height=550, key="map_multi", returned_objects=[])
                 except Exception as e:
                     st.error(f"ম্যাপ প্রদর্শনে সমস্যা হয়েছে: {e}")
     else:
         default_map = render_folium_map(center_lat=23.8103, center_lon=90.4125, zoom=11)
-        st_folium(default_map, use_container_width=True, height=550, key="default_blank_map")
+        st_folium(default_map, use_container_width=True, height=550, key="default_blank_map", returned_objects=[])
 
 else:
     st.warning("⚠️ D ড্রাইভের 'AL company BTS Address' ফোল্ডারে বা লোকাল ফোল্ডারে কোনো ডেটা ফাইল পাওয়া যায়নি। দয়া করে ফোল্ডার পাথ চেক করুন।")
